@@ -30,7 +30,7 @@ programa-sitio = "programa_sitio.mkdocs_plugin:ProgramaSitio"
 packages = ["programa_sitio"]
 
 [tool.setuptools.package-data]
-programa_sitio = ["predeterminado.yml", "plantillas/*.j2", "curso_base/**/*", "curso_base/*", "curso_base/.*", "curso_base/.*/*", "curso_base/.*/*/*"]
+programa_sitio = ["predeterminado.yml", "calendarios/*.yml", "plantillas/*.j2", "curso_base/**/*", "curso_base/*", "curso_base/.*", "curso_base/.*/*", "curso_base/.*/*/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["pruebas"]

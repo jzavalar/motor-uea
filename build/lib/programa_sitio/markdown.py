@@ -62,10 +62,17 @@ class Seccion:
 
 class Documento:
     def __init__(self, texto, nombre="programa analítico"):
-        self.texto = texto
+        self.original = texto
         self.nombre = nombre
-        self.lineas = texto.split("\n")
+        # Los bloques de datos se leen del texto original; después, TODO comentario HTML
+        # se vacía (conservando los saltos de línea para no mover los números de línea):
+        # lo comentado no es contenido, ni para las secciones ni para las tablas.
+        self.texto = texto
         self.datos = self._datos_ocultos()
+        self.texto = re.sub(r"<!--.*?-->", lambda m: "\n" * m.group(0).count("\n"),
+                            texto, flags=re.S)
+        self.lineas = self.texto.split("\n")
+        self.errores_estructura = []
         self.secciones = []
         self.raiz = Seccion(0, "(documento)", -1)
         self._leer_secciones()
@@ -105,20 +112,28 @@ class Documento:
         for s in pila[1:]:
             s.fin = len(self.lineas)
         self.raiz.fin = len(self.lineas)
+        numeros = [s.numero for s in self.secciones if s.numero]
+        for n in sorted({n for n in numeros if numeros.count(n) > 1}):
+            self.errores_estructura.append(f"hay dos secciones con el número {n}")
+
+    def buscar(self, clave_s):
+        """Todas las secciones que corresponden a clave_s: por número ('5.2', 'Anexo A')
+        o por título (sin acentos ni mayúsculas): primero las de título idéntico y, si no
+        hay, las que empiezan así."""
+        por_numero = [s for s in self.secciones if s.numero == clave_s]
+        if por_numero:
+            return por_numero
+        buscada = clave(clave_s)
+        exactas = [s for s in self.secciones if clave(s.titulo) == buscada]
+        if exactas:
+            return exactas
+        return [s for s in self.secciones if clave(s.titulo).startswith(buscada)]
 
     def seccion(self, clave_s):
-        """Por número ('5.2', 'Anexo A') o, si no hay número, por título (sin acentos
-        ni mayúsculas, al principio del título)."""
         if clave_s is None:
             return self.raiz
-        for s in self.secciones:
-            if s.numero == clave_s:
-                return s
-        buscada = clave(clave_s)
-        for s in self.secciones:
-            if clave(s.titulo).startswith(buscada):
-                return s
-        return None
+        encontradas = self.buscar(clave_s)
+        return encontradas[0] if encontradas else None
 
     def texto_de(self, s, propio=False):
         """Texto de la sección sin su encabezado. propio=True: solo hasta el primer
@@ -218,8 +233,19 @@ def numerada(texto):
 
 
 def items_parentesis(texto):
-    """'(1) texto uno. (2) texto dos (insumo de P2).' -> [(texto, 'P2' | None), ...]"""
-    crudos = re.findall(r"\(\d+\)\s*(.*?)(?=\s\(\d+\)|\Z)", texto, re.S)
+    """'(1) texto uno. (2) texto dos (insumo de P2).' -> [(texto, 'P2' | None), ...]
+
+    Los puntos se buscan en orden —(1), luego (2), luego (3)…—, así que un número entre
+    paréntesis dentro del texto, como un año «(2004)», no parte un punto en dos."""
+    marcas, n, pos = [], 1, 0
+    while True:
+        m = re.compile(rf"(?:^|(?<=\s))\({n}\)\s*").search(texto, pos)
+        if not m:
+            break
+        marcas.append(m)
+        pos, n = m.end(), n + 1
+    crudos = [texto[m.end():(marcas[i + 1].start() if i + 1 < len(marcas) else len(texto))]
+              for i, m in enumerate(marcas)]
     items = []
     for c in crudos:
         c = " ".join(c.split()).strip()

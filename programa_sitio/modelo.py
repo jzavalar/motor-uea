@@ -844,7 +844,9 @@ def aplicar_listas(doc, reglas, texto_base, destino, E, contexto=""):
 
 # ------------------------------------------------------------------- ensamble
 
-def construir_modelo(cfg):
+def construir_modelo(cfg, recolectar=False):
+    """recolectar=True: en vez de lanzar ErrorDeFuente, devuelve (ctx, errores) con todo
+    lo que se pudo armar (lo usa programa-sitio revisar)."""
     E = Errores()
     ruta = os.path.join(cfg["_raiz"], cfg["fuente"])
     try:
@@ -868,7 +870,20 @@ def construir_modelo(cfg):
     n_sesiones = len(S)
     if not con_bloque:
         # el periodo sale de §1 + la tabla
-        periodo["dias"] = sorted({s["fecha"].weekday() for s in S.values() if s["fecha"]})
+        # los días de clase: los del horario del grupo, si se entienden; si no, los que
+        # se repiten en la tabla (así una fecha mal escrita no inventa un día de clase)
+        dias_h = set()
+        for g in grupos:
+            texto_d = L.sin_acentos((g.get("dias") or g.get("horario") or "").lower())
+            dias_h |= {DIA_NUM[d] for d in re.findall(r"[a-z]+", texto_d) if d in DIA_NUM}
+        from collections import Counter
+        cuenta = Counter(s["fecha"].weekday() for s in S.values() if s["fecha"])
+        dias_tabla = sorted(d for d, c in cuenta.items() if c >= 2)
+        horario_distinto = bool(dias_h) and bool(dias_tabla) and sorted(dias_h) != dias_tabla
+        if horario_distinto:
+            E(f"§1: el horario dice {L.f_y([L.DIAS[d] for d in sorted(dias_h)])}, pero las "
+              f"sesiones de §7 son {L.f_y([L.DIAS[d] for d in dias_tabla])}")
+        periodo["dias"] = dias_tabla if horario_distinto or not dias_h else sorted(dias_h)
         periodo["descansos"] = [{"fecha": d["fecha"], "nota": ""} for d in descansos_tabla
                                 if d["fecha"]]
         if "primera_sesion" in periodo:
@@ -876,9 +891,14 @@ def construir_modelo(cfg):
             ef = periodo["_efectivas"]
             fechas_S = [S[n]["fecha"] for n in sorted(S)]
             if len(ef) != len(fechas_S) or ef != fechas_S:
+                dif = next(((i + 1, a, b) for i, (a, b) in enumerate(zip(fechas_S, ef))
+                            if a != b), None)
+                detalle = (f"; la primera diferencia es la sesión {dif[0]}: la tabla dice "
+                           f"{L.f_dma(dif[1]) if dif[1] else '—'} y el periodo da "
+                           f"{L.f_dma(dif[2])}") if dif else ""
                 E(f"§7: las fechas de la tabla ({len(fechas_S)} sesiones) no coinciden con "
                   f"los {len(ef)} {' y '.join(L.DIAS[d] for d in periodo['dias'])} del "
-                  f"periodo de clases menos los descansos de la tabla")
+                  f"periodo de clases menos los descansos de la tabla{detalle}")
     else:
         ef = periodo.get("_efectivas", [])
         if len(ef) != n_sesiones:
@@ -1065,9 +1085,12 @@ def construir_modelo(cfg):
             if not ok:
                 E(env.from_string(regla.get("mensaje") or f"no se cumple: {regla['que']}")
                   .render(**ctx))
+    ctx["_doc"] = doc
+    ctx["_periodo"] = periodo
+    if recolectar:
+        return ctx, list(E)
     if E:
         raise ErrorDeFuente("\n".join("  · " + e for e in E))
-    ctx["_doc"] = doc
     return ctx
 
 

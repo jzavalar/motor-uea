@@ -5,6 +5,8 @@
 #   ./sitio.sh construir           regenera el sitio a partir de la fuente y lo valida
 #   ./sitio.sh verificar           solo comprueba, sin escribir nada
 #   ./sitio.sh auditar             muestra los avisos de la auditoría de duplicación
+#   ./sitio.sh revisar             informe (revision.md) del programa analítico contra el
+#                                  calendario escolar y el programa oficial, para corregirlo
 #   ./sitio.sh servir              vista previa en http://127.0.0.1:8000 (se regenera al guardar)
 #   ./sitio.sh publicar [--pr] [-m "mensaje"]
 #                                  commit y push a main; con --pr, rama y Pull Request
@@ -24,7 +26,7 @@ export ANSIBLE_COLLECTIONS_PATH="$aqui/.ansible/collections"
 export ANSIBLE_LOCALHOST_WARNING=false
 export ANSIBLE_INVENTORY_UNPARSED_WARNING=false
 
-ayuda() { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; }
+ayuda() { sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; }
 
 version_mayor_o_igual() {  # $1 >= $2
     printf '%s\n%s\n' "$2" "$1" | sort --check=quiet --version-sort
@@ -106,6 +108,8 @@ case "$accion" in
         exec "$aqui/.venv/bin/programa-sitio" construir --verificar "$@" ;;
     auditar)
         exec "$aqui/.venv/bin/programa-sitio" construir --auditar "$@" ;;
+    revisar)
+        exec "$aqui/.venv/bin/programa-sitio" revisar "$@" ;;
     servir)
         # --livereload explícito: en MkDocs 1.6 con Click 8.2 la recarga no se activa sola.
         exec "$aqui/.venv/bin/mkdocs" serve --livereload "$@" ;;

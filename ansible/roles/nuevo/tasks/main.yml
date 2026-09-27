@@ -66,6 +66,8 @@
       - "{{ url_repo }}"
       - --unidad
       - "{{ unidad_corta }}"
+      - "{{ '--oficial' if programa_oficial | length > 0 else omit }}"
+      - "{{ (programa_oficial | expanduser | realpath) if programa_oficial | length > 0 else omit }}"
     creates: "{{ destino_abs }}/curso.yml"
   register: armado
 

@@ -71,7 +71,7 @@ def curso_yml(doc, sitio, repositorio, unidad):
     return "\n".join(lineas)
 
 
-def crear(destino, fuente, sitio, repositorio, unidad="UAM-Iztapalapa"):
+def crear(destino, fuente, sitio, repositorio, unidad="UAM-Iztapalapa", oficial=None):
     destino = os.path.abspath(os.path.expanduser(destino))
     if os.path.exists(os.path.join(destino, "curso.yml")):
         raise FileExistsError(f"{destino} ya tiene un curso.yml")
@@ -81,6 +81,12 @@ def crear(destino, fuente, sitio, repositorio, unidad="UAM-Iztapalapa"):
     os.makedirs(os.path.join(destino, "docs", "curso"), exist_ok=True)
     shutil.copyfile(os.path.expanduser(fuente),
                     os.path.join(destino, "docs", "curso", "programa-analitico.md"))
+    if oficial:
+        if not oficial.lower().endswith(".md"):
+            raise ValueError("el programa oficial debe estar en Markdown (.md); conviértalo "
+                             "una vez desde el PDF y vuelva a intentar")
+        shutil.copyfile(os.path.expanduser(oficial),
+                        os.path.join(destino, "docs", "curso", "programa-oficial.md"))
     with open(os.path.join(destino, "curso.yml"), "w", encoding="utf-8") as f:
         f.write(curso_yml(doc, sitio, repositorio, unidad))
     for raiz, _, archivos in os.walk(BASE):

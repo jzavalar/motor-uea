@@ -380,7 +380,9 @@ def auditar(ctx, cfg, generados):
     # existen después de generar
     for ruta in sorted(set(re.findall(r"\bdocs/[\w./-]+", ctx["_doc"].texto))):
         ruta = ruta.rstrip(".,;")
-        if not os.path.exists(os.path.join(raiz, ruta)) and ruta not in generados:
+        prefijo = ruta.rstrip("/") + "/"
+        if not os.path.exists(os.path.join(raiz, ruta)) and ruta not in generados and \
+                not any(g.startswith(prefijo) for g in generados):
             avisos.append(f"{cfg['fuente']}: menciona {ruta}, que no existe en el sitio "
                           "generado")
     return errores, avisos

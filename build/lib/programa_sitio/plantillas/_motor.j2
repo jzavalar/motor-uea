@@ -13,7 +13,7 @@
 **Sesiones {{ p.nums | nums }}{% if p.rango is defined %} · del {{ p.rango }} de {{ p.ultima.fecha.year }}{% endif %}**
 {% if p.peso_exp is defined %}
 
-**Pesa:** expediente, {{ p.peso_exp }} %; {{ p.eval.nombre | lower }}, {{ p.eval.peso }} %
+**Pesa:** expediente, {{ p.peso_exp }} %; {{ p.eval.nombre }}, {{ p.eval.peso }} %
 {% endif %}
 {%- endmacro %}
 
@@ -39,7 +39,7 @@
 
 {% macro criterios(p) %}
 {% for c in p.criterios %}
-- **{{ c.nombre }}**{% if c.nota is defined %} ({{ c.nota }}){% endif %}
+- **{{ c.nombre }}**{{ (" (" ~ c.nota ~ ")") if c.nota is defined else "" }}
 {% endfor %}
 {% endmacro %}
 
@@ -47,7 +47,7 @@
 {% if p.eval is defined %}
 ## {{ p.eval.nombre }}
 
-{% if p.evaluacion.previo is defined %}{{ p.evaluacion.previo }} {% endif %}{% if p.eval.duracion is defined and not (p.evaluacion.previo is defined and "minutos" in p.evaluacion.previo) %}Duración: {{ p.eval.duracion }} minutos. {% endif %}{% if p.evaluacion.ambito %}**Todas las preguntas son sobre {{ p.evaluacion.ambito }}.**{% endif %}
+{{ p.evaluacion.previo ~ " " if p.evaluacion.previo is defined else "" }}{{ ("Duración: " ~ p.eval.duracion ~ " minutos. ") if (p.eval.duracion is defined and not (p.evaluacion.previo is defined and "minutos" in p.evaluacion.previo)) else "" }}{{ ("**Todas las preguntas son sobre " ~ p.evaluacion.ambito ~ ".**") if p.evaluacion.ambito else "" }}
 
 {% for r in p.evaluacion.reactivos %}
 {{ loop.index }}. {{ r | mayus | punto }}

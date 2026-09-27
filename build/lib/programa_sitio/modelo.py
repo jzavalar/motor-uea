@@ -220,18 +220,23 @@ def analizar_calendario(doc, cfg, fases, periodo, E):
     efectivas = periodo.get("_efectivas")
     S, filas, descansos = {}, [], []
     ni = 0
+    # columnas por su nombre, no por su posición: una columna agregada no desordena nada
+    cols = [L.clave(c) for c in cfg["secciones"]["calendario"]["columnas"]]
+    idx = [t.claves.index(c) for c in cols]
     for fila in t.filas:
-        if len(fila) < 6:
-            E(f"§7: una fila de la tabla de sesiones no tiene 6 columnas: {fila!r}")
+        if len(fila) < len(t.claves):
+            E(f"§7: una fila de la tabla de sesiones tiene {len(fila)} columnas y el "
+              f"encabezado {len(t.claves)}: {' | '.join(fila)}")
             continue
-        num, fecha_txt, bloque, fase_txt, actividad, ia_txt = [c.strip() for c in fila[:6]]
+        num, fecha_txt, bloque, fase_txt, actividad, ia_txt = [fila[i].strip() for i in idx]
         ia_cod = iag.get(_plano(ia_txt))
         if ia_cod is None:
             E(f"§7: valor de IAG desconocido «{ia_txt}» en la fila «{num} {fecha_txt}»; "
               "agréguelo a vocabulario.iag en curso.yml")
             ia_cod = "na"
         if num in GUIONES:
-            if vocab["descanso"] and actividad.startswith(vocab["descanso"]):
+            if vocab["descanso"] and re.search(r"\b" + re.escape(vocab["descanso"].split()[0])
+                                               + r"\b", actividad, re.I):
                 d, _ = L.fecha_corta(fecha_txt, ini, fin)
                 if d is None:
                     E(f"§7: no se entiende la fecha del descanso «{fecha_txt}»")
@@ -415,6 +420,13 @@ def analizar_criterios(cuerpo, bloque):
     return criterios
 
 
+LEGIBLE = {"proposito": "«**Propósito.**»",
+           "condiciones": "«**Condiciones.**» o «**Insumo.**»",
+           "expediente": "«**Expediente.**» o «**Contenido del expediente….**»",
+           "evaluacion": "«**Evaluación escrita N.**» o «**Examen escrito N.**»",
+           "criterios": "«**Criterios de la rúbrica.**»"}
+
+
 def analizar_proyecto(doc, s, pid, nombre, cfg, E):
     cp = cfg["proyecto"]
     texto = doc.texto_de(s)
@@ -425,7 +437,8 @@ def analizar_proyecto(doc, s, pid, nombre, cfg, E):
     def campo(rol, obligatorio=True):
         r = _etiqueta(et, cp["etiquetas"][rol])
         if r is None and obligatorio:
-            E(f"{pid}: no se encontró el párrafo «**{cp['etiquetas'][rol].strip('^')}…**»")
+            E(f"{pid}: no se encontró el párrafo que empieza con {LEGIBLE.get(rol, rol)} "
+              f"(etiqueta en negritas; se busca con proyecto.etiquetas.{rol} de curso.yml)")
         return r
 
     r = campo("proposito")
@@ -466,12 +479,14 @@ def analizar_proyecto(doc, s, pid, nombre, cfg, E):
         i_prod = next((i for i, c in enumerate(t.claves) if c.startswith("producto")), None)
         i_fase = t.claves.index("fase")
         i_act = t.claves.index("actividad")
+        i_fecha = t.claves.index("fecha") if "fecha" in t.claves else None
         for f in t.filas:
             nums = L.numeros(f[0])
             if not nums:
                 E(f"{pid}: número de sesión no válido «{f[0]}» en la tabla del proyecto")
                 continue
             p["_tabla_sesiones"][nums[0]] = {
+                "fecha": f[i_fecha] if i_fecha is not None and i_fecha < len(f) else "",
                 "fase": f[i_fase] if i_fase < len(f) else "",
                 "actividad": f[i_act] if i_act < len(f) else "",
                 "producto": f[i_prod] if i_prod is not None and i_prod < len(f) else ""}
@@ -484,7 +499,7 @@ def analizar_sintesis(doc, cfg, ids, E):
         return {}
     sintesis = {}
     for b in vinetas(doc.texto_de(s)):
-        m = re.match(r"^(?:\*\*)?(P\d+)(?:\*\*)?\s+(.+?)\.?$", b)
+        m = re.match(r"^(?:\*\*)?(P\d+)(?:\*\*)?[\s:—–-]+(.+?)\.?$", b)
         if m:
             sintesis[m.group(1)] = m.group(2).strip()
     for pid in ids:
@@ -537,8 +552,11 @@ def analizar_componentes(doc, cfg, ids, E):
                  "peso": pesos[0] if pesos else 0, "forma": forma, "cuando": fecha_txt}
             if pid:
                 c["proyecto"] = pid
-            if "sesi" not in fecha_txt.lower():
-                c["en_globales"] = True
+            ms = re.search(r"[Ss]esi[oó]n (\d+)", fecha_txt)
+            if ms:
+                c["sesion_declarada"] = int(ms.group(1))
+            else:
+                c["_fecha_texto"] = fecha_txt
             if not pesos:
                 E(f"§8.2: el componente «{nombre}» no tiene ponderación")
             comps.append(c)
@@ -826,7 +844,9 @@ def aplicar_listas(doc, reglas, texto_base, destino, E, contexto=""):
 
 # ------------------------------------------------------------------- ensamble
 
-def construir_modelo(cfg):
+def construir_modelo(cfg, recolectar=False):
+    """recolectar=True: en vez de lanzar ErrorDeFuente, devuelve (ctx, errores) con todo
+    lo que se pudo armar (lo usa programa-sitio revisar)."""
     E = Errores()
     ruta = os.path.join(cfg["_raiz"], cfg["fuente"])
     try:
@@ -835,7 +855,7 @@ def construir_modelo(cfg):
     except FileNotFoundError:
         raise ErrorDeFuente(f"  · no existe la fuente {cfg['fuente']}")
     doc = Documento(texto)
-    for e in doc.errores_datos:
+    for e in doc.errores_datos + doc.errores_estructura:
         E(e)
     datos = cfg["_datos"]
 
@@ -850,7 +870,20 @@ def construir_modelo(cfg):
     n_sesiones = len(S)
     if not con_bloque:
         # el periodo sale de §1 + la tabla
-        periodo["dias"] = sorted({s["fecha"].weekday() for s in S.values() if s["fecha"]})
+        # los días de clase: los del horario del grupo, si se entienden; si no, los que
+        # se repiten en la tabla (así una fecha mal escrita no inventa un día de clase)
+        dias_h = set()
+        for g in grupos:
+            texto_d = L.sin_acentos((g.get("dias") or g.get("horario") or "").lower())
+            dias_h |= {DIA_NUM[d] for d in re.findall(r"[a-z]+", texto_d) if d in DIA_NUM}
+        from collections import Counter
+        cuenta = Counter(s["fecha"].weekday() for s in S.values() if s["fecha"])
+        dias_tabla = sorted(d for d, c in cuenta.items() if c >= 2)
+        horario_distinto = bool(dias_h) and bool(dias_tabla) and sorted(dias_h) != dias_tabla
+        if horario_distinto:
+            E(f"§1: el horario dice {L.f_y([L.DIAS[d] for d in sorted(dias_h)])}, pero las "
+              f"sesiones de §7 son {L.f_y([L.DIAS[d] for d in dias_tabla])}")
+        periodo["dias"] = dias_tabla if horario_distinto or not dias_h else sorted(dias_h)
         periodo["descansos"] = [{"fecha": d["fecha"], "nota": ""} for d in descansos_tabla
                                 if d["fecha"]]
         if "primera_sesion" in periodo:
@@ -858,9 +891,14 @@ def construir_modelo(cfg):
             ef = periodo["_efectivas"]
             fechas_S = [S[n]["fecha"] for n in sorted(S)]
             if len(ef) != len(fechas_S) or ef != fechas_S:
+                dif = next(((i + 1, a, b) for i, (a, b) in enumerate(zip(fechas_S, ef))
+                            if a != b), None)
+                detalle = (f"; la primera diferencia es la sesión {dif[0]}: la tabla dice "
+                           f"{L.f_dma(dif[1]) if dif[1] else '—'} y el periodo da "
+                           f"{L.f_dma(dif[2])}") if dif else ""
                 E(f"§7: las fechas de la tabla ({len(fechas_S)} sesiones) no coinciden con "
                   f"los {len(ef)} {' y '.join(L.DIAS[d] for d in periodo['dias'])} del "
-                  f"periodo de clases menos los descansos de la tabla")
+                  f"periodo de clases menos los descansos de la tabla{detalle}")
     else:
         ef = periodo.get("_efectivas", [])
         if len(ef) != n_sesiones:
@@ -883,6 +921,11 @@ def construir_modelo(cfg):
     # proyectos
     patron = cfg["secciones"]["proyectos"]
     secciones_p = [(s, re.match(patron, s.titulo)) for s in doc.secciones]
+    for s_, m_ in secciones_p:
+        if not m_ and re.match(r"^Proyecto\b", s_.titulo):
+            E(f"§{s_.numero or '6'}: el encabezado «{s_.titulo_completo}» no tiene la forma "
+              "«Proyecto PN · Nombre» (o «Proyecto PN: Nombre»); el motor no lo reconoce "
+              "como proyecto")
     secciones_p = [(s, m) for s, m in secciones_p if m]
     if not secciones_p:
         E("§6: no se encontró ninguna sección «Proyecto PN · Nombre»")
@@ -922,6 +965,10 @@ def construir_modelo(cfg):
                 if normalizar_fase(tab["fase"], fases) != v["fase"]:
                     E(f"{pid}: la sesión {s['num']} es «{v['fase']}» en el calendario y "
                       f"«{tab['fase']}» en la tabla del proyecto")
+                if tab.get("fecha") and s["fecha"] and \
+                        " ".join(tab["fecha"].split()) != L.f_corta(s["fecha"]):
+                    E(f"{pid}: la sesión {s['num']} dice «{tab['fecha']}» en la tabla del "
+                      f"proyecto y «{L.f_corta(s['fecha'])}» en el calendario")
                 v["producto"] = tab["producto"]
                 v["actividad_larga"] = tab["actividad"]
                 if len(s["proyectos"]) == 1:
@@ -953,8 +1000,7 @@ def construir_modelo(cfg):
             if entrega:
                 exp["sesion"] = entrega["num"]
                 exp["fecha"] = entrega["fecha"]
-                if not esc.get("en_globales"):
-                    esc["sesion"], esc["fecha"] = entrega["num"], entrega["fecha"]
+                _cuando_escrita(esc, entrega, periodo, pid, E)
             if "duracion" in p["evaluacion"] and "duracion" not in esc:
                 esc["duracion"] = p["evaluacion"]["duracion"]
         # datos propios del sitio para este proyecto
@@ -980,6 +1026,11 @@ def construir_modelo(cfg):
             elif r.get("obligatorio"):
                 E(f"{pid}: no se encontró «**{r['etiqueta']}**»")
         del p["_tabla_sesiones"]
+
+    for c in ev["componentes"]:
+        c.pop("_fecha_texto", None)
+    _contrastar_encabezados(proyectos, E)
+    _contrastar_grupos(grupos, periodo, E)
 
     n_crit = rub["criterios"]
     for p in proyectos:
@@ -1034,10 +1085,85 @@ def construir_modelo(cfg):
             if not ok:
                 E(env.from_string(regla.get("mensaje") or f"no se cumple: {regla['que']}")
                   .render(**ctx))
+    ctx["_doc"] = doc
+    ctx["_periodo"] = periodo
+    if recolectar:
+        return ctx, list(E)
     if E:
         raise ErrorDeFuente("\n".join("  · " + e for e in E))
-    ctx["_doc"] = doc
     return ctx
+
+
+DIA_NUM = {L.sin_acentos(d): i for i, d in enumerate(L.DIAS)}
+
+
+def _contrastar_grupos(grupos, periodo, E):
+    """Los días escritos en el horario de cada grupo deben ser los días de la tabla."""
+    dias = set(periodo.get("dias") or [])
+    for g in grupos:
+        texto = L.sin_acentos((g.get("dias") or g.get("horario") or "").lower())
+        escritos = {DIA_NUM[d] for d in re.findall(r"[a-z]+", texto) if d in DIA_NUM}
+        if escritos and dias and escritos != dias:
+            E(f"§1: el horario del grupo {g['id']} dice {', '.join(L.DIAS[d] for d in sorted(escritos))}, "
+              f"pero las sesiones de §7 son {', '.join(L.DIAS[d] for d in sorted(dias))}")
+
+
+def _contrastar_encabezados(proyectos, E):
+    """Si un proyecto repite, al principio de su sección, sus sesiones («Sesiones: 3, 5…»)
+    o sus ponderaciones («Ponderación: entregable, 10 %; examen escrito 1, 12 %»), deben
+    coincidir con el calendario y con §8.2."""
+    for p in proyectos:
+        if "sesiones" not in p:
+            continue
+        cabeza = p["texto"].split("**")[0]
+        m = re.search(r"^Sesiones:\s*(.+?)\.?\s*$", cabeza, re.M)
+        if m:
+            sin_notas = re.sub(r"\([^)]*\)", "", m.group(1))
+            nums = sorted(set(L.numeros(sin_notas)))
+            if " a " in sin_notas and len(nums) == 2:
+                nums = list(range(nums[0], nums[1] + 1))
+            if nums != sorted(p["nums"]):
+                E(f"{p['id']}: su encabezado dice «Sesiones: {m.group(1).strip()}», pero en "
+                  f"el calendario sus sesiones son {L.f_y(p['nums'])}")
+        m = re.search(r"^.*Ponderación:\s*(.+)$", cabeza, re.M)
+        if m and "eval" in p:
+            dichos = [float(x.replace(",", ".")) for x in RE_PCT.findall(m.group(1))]
+            reales = [p["peso_exp"], p["eval"]["peso"]]
+            if len(dichos) == 2 and sorted(dichos) != sorted(float(x) for x in reales):
+                E(f"{p['id']}: su encabezado dice «Ponderación: {m.group(1).strip()}», pero "
+                  f"§8.2 da {p['peso_exp']} % al expediente y {p['eval']['peso']} % a la "
+                  "evaluación escrita")
+
+
+def _cuando_escrita(esc, entrega, periodo, pid, E):
+    """La fecha de la evaluación escrita de un proyecto: la sesión de entrega, salvo que
+    §8.2 la ubique en las evaluaciones globales. Si §8.2 dice una sesión o una fecha, se
+    contrasta con el calendario."""
+    if "sesion_declarada" in esc:
+        if esc["sesion_declarada"] != entrega["num"]:
+            E(f"§8.2: «{esc['nombre']}» dice sesión {esc['sesion_declarada']}, pero la "
+              f"fase de entrega de {pid} es la sesión {entrega['num']}")
+        esc["sesion"], esc["fecha"] = entrega["num"], entrega["fecha"]
+        return
+    texto = esc.pop("_fecha_texto", "")
+    anio = (periodo.get("globales_inicio") or entrega["fecha"] or dt.date.today()).year
+    rango = L.rango_texto(texto if re.search(r"\d{4}", texto) else f"{texto} de {anio}")
+    un_dia = L.fecha_texto(texto, anio)
+    g_ini, g_fin = periodo.get("globales_inicio"), periodo.get("globales_fin")
+    if rango and g_ini and g_ini <= rango[0] and rango[1] <= g_fin:
+        esc["en_globales"] = True
+    elif re.search(r"global", texto, re.I) and not un_dia:
+        esc["en_globales"] = True
+    elif un_dia and g_ini and g_ini <= un_dia <= g_fin:
+        esc["en_globales"] = True
+    elif un_dia and entrega["fecha"] and un_dia == entrega["fecha"]:
+        esc["sesion"], esc["fecha"] = entrega["num"], entrega["fecha"]
+    elif un_dia:
+        E(f"§8.2: «{esc['nombre']}» dice «{texto}», que no es la sesión de entrega de "
+          f"{pid} ({L.f_dma(entrega['fecha'])}) ni cae en las evaluaciones globales")
+    else:
+        E(f"§8.2: no entiendo cuándo es «{esc['nombre']}» («{texto}»); escriba «Sesión N, "
+          "día de mes» o las fechas de las evaluaciones globales")
 
 
 def _fin_de_clases(doc, periodo):

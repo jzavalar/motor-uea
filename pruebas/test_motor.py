@@ -142,7 +142,27 @@ def _desplazar(texto, dias):
     return RE_FECHAS.sub(cambiar, texto)
 
 
+def _calendario_desplazado(curso, dias, clave="27-I"):
+    """Un calendario escolar hipotético: el de 26-O corrido `dias` días. (El 27-I real
+    tiene otro número de sesiones y otros descansos; aquí se prueba la propagación.)"""
+    import yaml
+    real = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), "..", "programa_sitio",
+                                            "calendarios", "2026-2027.yml")))
+    t = real["trimestres"]["26-O"]
+    mas = lambda d: d + dt.timedelta(days=dias)  # noqa: E731
+    nuevo = {"calendario": "Calendario hipotético", "descansos": [mas(d) for d in real["descansos"]],
+             "trimestres": {clave: {"nombre": "27-Invierno",
+                                    "trimestre": [mas(d) for d in t["trimestre"]],
+                                    "clases": [mas(d) for d in t["clases"]],
+                                    "globales": [mas(d) for d in t["globales"]],
+                                    "semanas": {}, "recuperacion": {}}}}
+    (curso / "calendario.yml").write_text(yaml.safe_dump(nuevo, allow_unicode=True))
+    escribir(curso, "curso.yml", leer(curso, "curso.yml") +
+             "\ncalendario: {archivo: calendario.yml}\n")
+
+
 def test_cambio_de_trimestre(curso):
+    _calendario_desplazado(curso, 16 * 7)
     t = leer(curso, FUENTE)
     t = _desplazar(t, 16 * 7).replace("26-Otoño", "27-Invierno")
     escribir(curso, FUENTE, t)
@@ -338,7 +358,8 @@ def test_horario_contra_calendario(curso):
     cambiar_fuente(curso, "| Horario | Lunes y miércoles,", "| Horario | Martes y jueves,")
     with pytest.raises(ErrorDeFuente) as e:
         construir(str(curso))
-    assert "horario del grupo HE57" in str(e.value)
+    assert "el horario dice martes y jueves, pero las sesiones de §7 son lunes y miércoles" \
+        in str(e.value)
 
 
 def test_encabezado_del_proyecto_contra_la_evaluacion(curso):
@@ -454,3 +475,99 @@ def test_nuevo_avisa_si_la_fuente_dice_otra_direccion(tmp_path):
     m = crear(str(tmp_path / "x"), os.path.join(AD, FUENTE),
               "https://otra.github.io/x/", "https://github.com/otra/x")
     assert any("manda la fuente" in x for x in m)
+
+
+# ------------------------------------------------------------ calendario escolar
+
+def test_trimestre_contra_el_calendario_escolar(curso):
+    cambiar_fuente(curso, "| Evaluaciones globales | 7 al 11 de diciembre de 2026 |",
+                   "| Evaluaciones globales | 8 al 12 de diciembre de 2026 |")
+    with pytest.raises(ErrorDeFuente) as e:
+        construir(str(curso))
+    assert "[calendario escolar]" in str(e.value)
+    assert "evaluaciones globales son del 8 de diciembre" in str(e.value)
+
+
+def test_trimestre_que_el_motor_no_conoce(curso):
+    cambiar_fuente(curso, "Trimestre 26-Otoño · Grupo HE57", "Trimestre 28-Otoño · Grupo HE57")
+    with pytest.raises(ErrorDeFuente) as e:
+        construir(str(curso))
+    assert "no tiene el trimestre 28-O" in str(e.value)
+
+
+def test_descanso_oficial_que_falta_en_la_tabla(curso):
+    import yaml
+    real = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), "..", "programa_sitio",
+                                            "calendarios", "2026-2027.yml")))
+    real["descansos"].append(dt.date(2026, 10, 21))   # un miércoles con sesión (la 9)
+    (curso / "cal.yml").write_text(yaml.safe_dump(real, allow_unicode=True))
+    escribir(curso, "curso.yml", leer(curso, "curso.yml") + "\ncalendario: {archivo: cal.yml}\n")
+    with pytest.raises(ErrorDeFuente) as e:
+        construir(str(curso))
+    assert "la sesión 9 cae el 21 de octubre de 2026, que es día de descanso" in str(e.value)
+
+
+def test_calendario_disponible_en_las_plantillas(curso):
+    m = construir(str(curso))["modelo"]
+    assert m["cal"]["oficial"]["recuperacion"]["evaluaciones"] == [dt.date(2027, 1, 6),
+                                                                   dt.date(2027, 1, 8)]
+    assert len(m["cal"]["oficial"]["semanas"]) == 12
+
+
+# ------------------------------------------------------------- programa oficial
+
+def test_contraste_con_el_programa_oficial(curso):
+    r = construir(str(curso))
+    assert r["modelo"]["oficial"]["datos"]["clave"] == "221192"
+    cambiar_fuente(curso, "| Créditos | 8 |", "| Créditos | 9 |")
+    cambiar_fuente(curso, "- «Buscar y ponderar información relevante en fuentes diversas.»",
+                   "- «Buscar y valorar información relevante en fuentes diversas.»")
+    with pytest.raises(ErrorDeFuente) as e:
+        construir(str(curso))
+    t = str(e.value)
+    assert "[programa oficial]" in t and "créditos: el programa analítico dice «9»" in t
+    assert "Buscar y ponderar" in t
+
+
+def test_cita_del_programa_oficial_alterada(curso):
+    cambiar_fuente(curso, "«Al menos dos evaluaciones periódicas escritas aplicadas",
+                   "«Al menos tres evaluaciones periódicas escritas aplicadas")
+    with pytest.raises(ErrorDeFuente) as e:
+        construir(str(curso))
+    assert "se atribuye al programa oficial" in str(e.value)
+
+
+def test_sin_programa_oficial_solo_avisa(curso):
+    os.remove(curso / "docs/curso/programa-oficial.md")
+    r = construir(str(curso))
+    assert any("no existe el programa oficial" in a for a in r["avisos"])
+
+
+# ------------------------------------------------------------------ revisión
+
+def test_informe_de_revision_listo(curso):
+    from programa_sitio.revision import informe
+    texto, listo = informe(str(curso))
+    assert listo and "está listo" in texto
+    assert "Fechas oficiales del trimestre 26-O" in texto
+    assert "6 de enero de 2027 al 8 de enero de 2027" in texto   # recuperación
+
+
+def test_informe_de_revision_con_problemas(curso):
+    from programa_sitio.revision import informe
+    cambiar_fuente(curso, "| Créditos | 8 |", "| Créditos | 9 |")
+    cambiar_fuente(curso, "| Evaluaciones globales | 7 al 11 de diciembre de 2026 |",
+                   "| Evaluaciones globales | 8 al 12 de diciembre de 2026 |")
+    texto, listo = informe(str(curso))
+    assert not listo
+    assert "### Contra el calendario escolar" in texto
+    assert "### Contra el programa de estudios oficial" in texto
+    assert "## Instrucciones para el asistente de IA" in texto
+    # no se escribió nada del sitio
+    assert "8 al 12" not in leer(curso, "docs/index.md")
+
+
+def test_orden_revisar(curso):
+    r = subprocess.run([sys.executable, "-m", "programa_sitio.cli", "revisar", "--curso",
+                        str(curso)], capture_output=True, text=True)
+    assert r.returncode == 0 and (curso / "revision.md").exists()

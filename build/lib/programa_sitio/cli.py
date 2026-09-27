@@ -1,6 +1,7 @@
 """programa-sitio — línea de órdenes.
 
     programa-sitio construir [--curso DIR] [--verificar] [--auditar] [--porcelana]
+    programa-sitio revisar [--curso DIR] [--salida revision.md]
     programa-sitio nuevo DIR --fuente programa.md --sitio URL --repositorio URL
     programa-sitio version
 
@@ -9,6 +10,9 @@ construir   valida la fuente, regenera lo que cambió y borra las páginas huér
                          coincide con la fuente (lo usan el gancho y GitHub Actions)
             --auditar    muestra también los avisos de la auditoría de duplicación
             --porcelana  escribe e imprime solo las rutas escritas o borradas
+revisar     informe en Markdown del programa analítico contra el calendario escolar,
+            el programa oficial y la estructura común, para corregirlo (por ejemplo,
+            con un asistente de IA). No escribe nada del sitio.
 nuevo       arma el repositorio de una UEA nueva a partir de su programa analítico.
 """
 
@@ -66,10 +70,40 @@ def orden_construir(a):
     return 0
 
 
+def orden_revisar(a):
+    from .revision import informe
+    texto, listo = informe(a.curso)
+    destino = os.path.join(a.curso, a.salida) if a.salida != "-" else None
+    if destino:
+        with open(destino, "w", encoding="utf-8") as f:
+            f.write(texto)
+        print(("Listo: el programa analítico pasa todas las comprobaciones." if listo else
+               "Hay problemas por corregir.") + f" Informe: {a.salida}")
+    else:
+        print(texto)
+    return 0 if listo else 1
+
+
+def orden_entradas(a):
+    """Imprime las rutas de las que depende el sitio (una por renglón), relativas a la
+    raíz del curso: la fuente, curso.yml, el archivo de datos y la carpeta de plantillas.
+    Las usa el gancho pre-commit."""
+    from . import config as C
+    try:
+        cfg = C.cargar(a.curso)
+    except C.ErrorDeConfiguracion as e:
+        print(e, file=sys.stderr)
+        return 2
+    for r in (cfg["fuente"], C.ARCHIVO_CURSO, cfg.get("_datos_archivo"), cfg["plantillas"]):
+        if r:
+            print(r)
+    return 0
+
+
 def orden_nuevo(a):
     from .nuevo import crear
     try:
-        mensajes = crear(a.destino, a.fuente, a.sitio, a.repositorio, a.unidad)
+        mensajes = crear(a.destino, a.fuente, a.sitio, a.repositorio, a.unidad, a.oficial)
     except (ValueError, FileExistsError, FileNotFoundError) as e:
         print(f"No se pudo crear el curso: {e}", file=sys.stderr)
         return 2
@@ -93,8 +127,18 @@ def main(argv=None):
     n.add_argument("--sitio", required=True, help="URL del sitio (GitHub Pages)")
     n.add_argument("--repositorio", required=True, help="URL del repositorio en GitHub")
     n.add_argument("--unidad", default="UAM-Iztapalapa")
+    n.add_argument("--oficial", help="programa de estudios oficial en Markdown")
+    rv = sub.add_parser("revisar", help="informe del programa contra sus tres insumos")
+    rv.add_argument("--curso", default=".")
+    rv.add_argument("--salida", default="revision.md", help="archivo del informe («-»: pantalla)")
+    en = sub.add_parser("entradas", help="lista las rutas de las que depende el sitio")
+    en.add_argument("--curso", default=".")
     sub.add_parser("version")
     a = ap.parse_args(argv)
+    if a.orden == "entradas":
+        return orden_entradas(a)
+    if a.orden == "revisar":
+        return orden_revisar(a)
     if a.orden == "construir":
         return orden_construir(a)
     if a.orden == "nuevo":

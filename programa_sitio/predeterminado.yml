@@ -149,3 +149,16 @@ salidas:
   mkdocs.yml: mkdocs.yml.j2
 # Páginas escritas a mano en docs/ que se agregan al menú generado (grupo «Más»)
 menu_extra: []
+
+# ------------------------------------------------------------ insumos oficiales
+# Calendario escolar: el del motor (programa_sitio/calendarios/AAAA-AAAA.yml). El
+# trimestre se deduce del encabezado de la fuente («Trimestre 26-Otoño» -> 26-O). Con
+# «archivo» se usa además una copia propia (tiene prioridad sobre la del motor).
+calendario:
+  archivo: null
+  trimestre: null
+# Programa de estudios oficial de la UEA, en Markdown. Si no existe, solo se avisa
+# (con exigir: true, es un error).
+programa_oficial:
+  archivo: docs/curso/programa-oficial.md
+  exigir: false

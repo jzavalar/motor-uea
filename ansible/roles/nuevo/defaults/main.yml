@@ -2,6 +2,8 @@
 destino: ""
 # Programa analítico en Markdown (se copia a docs/curso/programa-analitico.md)
 fuente: ""
+# Programa de estudios oficial en Markdown (se copia a docs/curso/programa-oficial.md)
+programa_oficial: ""
 # Nombre del repositorio en GitHub (p. ej. analisis-de-decisiones)
 nombre_repo: "{{ destino | basename }}"
 # Cuenta de GitHub; si se deja vacía, se toma de gh (gh api user)

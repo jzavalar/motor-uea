@@ -10,14 +10,31 @@ describe abajo (identificación, fases, proyectos, calendario, evaluación, lect
 para cada trimestre nuevo de la misma UEA. Está pensado para Fedora 44 o posterior, con
 Ansible, MkDocs Material y GitHub Pages.
 
+### Los tres insumos
+
+| Insumo | Dónde vive | Quién lo cambia |
+|---|---|---|
+| **Programa de estudios oficial** de la UEA | `docs/curso/programa-oficial.md` en el repositorio del curso (el PDF de la UAM convertido una vez a Markdown) | Nadie: es la referencia |
+| **Calendario escolar** vigente | `programa_sitio/calendarios/AAAA-AAAA.yml`, en este motor, un archivo por año escolar | Se actualiza cada año, o cuando el Colegio Académico lo modifique (ver *Calendario escolar*) |
+| **Programa analítico** | `docs/curso/programa-analitico.md` en el repositorio del curso | El profesor, con su asistente de IA |
+
+El programa analítico se redacta a partir de los otros dos, por iteraciones: el motor
+lo contrasta con ambos (`./sitio.sh revisar`) y entrega un informe de discrepancias para
+el asistente. Cuando el informe dice «listo», ese programa es la **fuente única** del sitio.
+Para redactarlo: [`docs/guia-redaccion-programa-analitico.md`](docs/guia-redaccion-programa-analitico.md)
+(se le entrega al asistente) y [`docs/plantilla-programa-analitico.md`](docs/plantilla-programa-analitico.md)
+(el esqueleto vacío, con la forma que lee el motor).
+
 Este repositorio contiene:
 
 | Carpeta | Qué es |
 |---|---|
 | `programa_sitio/` | El motor (paquete de Python): analiza la fuente, valida, genera y audita. Incluye un complemento de MkDocs y la orden `programa-sitio`. |
+| `programa_sitio/calendarios/` | El calendario escolar de cada año escolar, en YAML. |
 | `programa_sitio/plantillas/` | Las páginas predeterminadas: portada, menú (`mkdocs.yml`), README y página genérica de proyecto. |
 | `programa_sitio/curso_base/` | Lo que recibe cada repositorio de curso: `sitio.sh`, el gancho pre-commit, la acción de GitHub y las versiones fijadas del motor. |
 | `ansible/` | La colección de Ansible `jzavalar.programa_sitio`: preparar, construir, publicar y crear un curso nuevo. |
+| `docs/` | La guía de redacción para el asistente de IA y la plantilla del programa analítico. |
 | `pruebas/` | Pruebas automáticas, con un caso completo (Análisis de Decisiones). |
 
 ---
@@ -26,6 +43,7 @@ Este repositorio contiene:
 
 ```bash
 ./sitio.sh preparar     # una vez por equipo: dnf, entorno virtual con el motor, gancho de git
+./sitio.sh revisar      # contrasta el programa con el calendario y el programa oficial → revision.md
 ./sitio.sh servir       # vista previa en http://127.0.0.1:8000; se regenera al guardar la fuente
 ./sitio.sh construir    # regenera, valida y compila el sitio (sin tocar git)
 ./sitio.sh verificar    # solo comprueba; no escribe nada
@@ -37,6 +55,15 @@ Este repositorio contiene:
 Se edita **solo** `docs/curso/programa-analitico.md` (y, si hace falta, `curso.yml`, los
 datos del sitio o las plantillas propias). Cada archivo generado lo dice en su primera
 línea: `ARCHIVO GENERADO por programa-sitio … No lo edite`.
+
+### Redactar con el asistente de IA: `revisar`
+
+`./sitio.sh revisar` escribe `revision.md` (no se sube a git) con: los insumos usados,
+si el programa está listo, cada problema agrupado por su origen (calendario escolar,
+programa oficial, estructura interna), los avisos, instrucciones para el asistente y la
+tabla de fechas oficiales del trimestre. Se le entrega ese archivo al asistente, que
+corrige solo lo señalado; se repite hasta que diga «El programa analítico está listo».
+Termina con código 1 mientras no lo esté.
 
 ### Cuándo se propaga un cambio
 
@@ -94,7 +121,19 @@ GitHub Actions— sigue los mismos pasos, y **si cualquiera falla no se escribe 
    basado en proyectos (ver abajo) y se aplican las reglas propias del curso
    (`extraer`, `tablas`, `listas` de `curso.yml`). Se agregan los datos que solo usa el
    sitio (`datos`), sin pisar nunca lo que dice la fuente.
-4. **Validación.** Fechas contra el periodo y el día de la semana; días del horario de
+4. **Contraste con el calendario escolar.** El trimestre del encabezado
+   («26-Otoño» → `26-O`) elige el trimestre del calendario. Trimestre lectivo y
+   evaluaciones globales de §1 iguales a los oficiales; ninguna sesión fuera del periodo
+   de clases ni en día de descanso; cada descanso que cae en día de clase del grupo,
+   presente en la tabla de §7, y ningún descanso inventado; aviso de días de clase sin
+   sesión. Las fechas de recuperación pasan al sitio desde aquí.
+5. **Contraste con el programa oficial.** Nombre, clave (la de seis dígitos se convierte
+   a siete), plan, división, carácter, trimestre del plan, créditos, horas y seriación de
+   §1; objetivos (§3.1) y contenido sintético (§4.1) transcritos tal cual; toda cita
+   «…» atribuida al programa oficial, literal. La bibliografía oficial ausente solo
+   produce avisos. Si falta el archivo del programa oficial, es un aviso (un error con
+   `programa_oficial.exigir: true`).
+6. **Validación interna.** Fechas contra el periodo y el día de la semana; días del horario de
    cada grupo contra los de las sesiones; numeración de sesiones; fases de cada proyecto
    en el orden de la tabla de fases; la tabla de cada proyecto (sesión, fecha y fase)
    contra el calendario; los renglones «Sesiones: …» y «Ponderación: …» del encabezado
@@ -103,13 +142,13 @@ GitHub Actions— sigue los mismos pasos, y **si cualquiera falla no se escribe 
    ponderaciones que suman 100 %; subtotales y totales; criterios de la rúbrica; sesiones
    citadas por las lecturas; secciones con número repetido; y las comprobaciones propias
    del curso (`validar`). Se reúnen **todos** los errores antes de detenerse.
-5. **Plan de salidas.** Portada, menú y README; las secciones que `paginas` pide como
+7. **Plan de salidas.** Portada, menú y README; las secciones que `paginas` pide como
    páginas; una página por cada proyecto que declare la sección 6 (su plantilla propia
    si existe, la genérica si no, o la sección tal cual); las plantillas propias del curso.
-6. **Generación** con Jinja2, en modo estricto: una variable inexistente es un error, no
+8. **Generación** con Jinja2, en modo estricto: una variable inexistente es un error, no
    un hueco silencioso.
-7. **Auditoría de duplicación** de las plantillas del curso (ver abajo).
-8. **Escritura** de lo que cambió y **borrado de huérfanos**: todo archivo de `docs/`,
+9. **Auditoría de duplicación** de las plantillas del curso (ver abajo).
+10. **Escritura** de lo que cambió y **borrado de huérfanos**: todo archivo de `docs/`,
    de cualquier formato, con la marca de generado en su primera línea que ya no
    corresponde a ninguna salida (por ejemplo, la carpeta de un proyecto que cambió de
    nombre). Nunca se borra un archivo escrito a mano.
@@ -141,6 +180,8 @@ Todas las claves son opcionales; los valores predeterminados, comentados, están
 |---|---|
 | `version_motor` | Versión del motor para la que se escribió este archivo. |
 | `fuente` | Ruta de la fuente (predeterminado: `docs/curso/programa-analitico.md`). |
+| `calendario` | `archivo`: calendario escolar propio del curso, con prioridad sobre los del motor; `trimestre`: forzar un trimestre (`27-I`) en lugar del que dice el encabezado. |
+| `programa_oficial` | `archivo` (predeterminado: `docs/curso/programa-oficial.md`); `exigir: true` convierte en error que falte. |
 | `datos` | YAML (o diccionario) con lo que solo usa el sitio; se accede como `curso.<clave>` y, por proyecto, `datos.proyectos.P1.<clave>` se copia a `p.<clave>`. |
 | `plantillas` | Carpeta de las plantillas propias (predeterminado: `fuente/plantillas`); se buscan antes que las del motor. |
 | `sitio` | `url`, `repositorio`, `unidad_corta` cuando no están en la fuente. |
@@ -168,7 +209,7 @@ Ejemplos completos: el `curso.yml` de [Informática](https://github.com/jzavalar
 `curso` (con `uea`, `grupos`, `fases`, `evaluacion`, `rubrica`, `lecturas` y lo que
 agreguen `extraer`, `tablas`, `listas` y `datos`), `proyectos` y `P` (por id), `p` (en la
 página de un proyecto), `sesiones`/`S` (por número), `filas` (renglones del calendario),
-`cal` (`periodo`, `todas`, `diagnostico`), `intro`, `holguras`, `n_sesiones`, `menu`,
+`cal` (`periodo`, `todas`, `diagnostico` y `oficial`: el trimestre del calendario escolar, con `inicio`, `fin`, `inicio_clases`, `fin_clases`, `globales`, `actas`, `recuperacion.inscripcion`, `recuperacion.evaluaciones`, `semanas`, `descansos`), `oficial` (el programa de estudios leído, si existe), `intro`, `holguras`, `n_sesiones`, `menu`,
 `config`, `motor`. Filtros: `corta`, `larga`, `dm`, `dma`, `palabra`, `y`, `nums`,
 `punto`, `mayus`, `minuscula_inicial`, `sin_protocolo`, `yaml`, `slug`; función `rango`.
 
@@ -191,6 +232,30 @@ Si una coincidencia es legítima, se declara en la plantilla:
 `{# auditoría: permitido «30 de septiembre de 2026» (fecha de una noticia) #}`.
 
 ---
+
+## Calendario escolar
+
+Un archivo por año escolar en `programa_sitio/calendarios/`, transcrito del que aprueba
+el Colegio Académico: días de descanso obligatorio y, por trimestre (`26-O`, `27-I`,
+`27-P`), inicio y fin, periodo de clases, semanas lectivas, evaluaciones globales, actas y
+evaluaciones de recuperación. Se actualiza **cada año, o cuando el calendario se
+modifique**:
+
+1. Copiar el archivo del año anterior como `AAAA-AAAA.yml` y transcribir las fechas nuevas
+   (el comentario del archivo indica de qué sesión del Colegio Académico sale).
+2. `python3 -m pytest`, subir la versión del motor y publicar una etiqueta nueva
+   (ver *Versiones*).
+3. En cada curso, cambiar la etiqueta en `requirements.txt` y `requirements.yml`, y
+   `./sitio.sh preparar`.
+
+Si un curso necesita un calendario antes de que exista la versión nueva del motor, puede
+usar su propia copia, que tiene prioridad:
+
+```yaml
+calendario:
+  archivo: fuente/calendario-2027-2028.yml   # misma forma que los del motor
+  trimestre: null                             # o forzar uno: 27-O
+```
 
 ## Versiones
 

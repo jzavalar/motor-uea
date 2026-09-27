@@ -39,7 +39,9 @@ def curso_yml(doc, sitio, repositorio, unidad):
         for s in doc.secciones:
             if s.numero and s.titulo.startswith(titulo) and (titulo != "Evaluación"
                                                               or "." not in s.numero):
-                paginas.append(f"  - {{destino: {destino}, secciones: [\"{s.numero}\"], "
+                # por título, no por número: si se renumeran las secciones, la página
+                # sigue mostrando la misma
+                paginas.append(f"  - {{destino: {destino}, secciones: [\"{s.titulo}\"], "
                                f"menu: {menu}}}")
                 break
     niveles = _niveles(doc.texto)
@@ -69,7 +71,7 @@ def curso_yml(doc, sitio, repositorio, unidad):
     return "\n".join(lineas)
 
 
-def crear(destino, fuente, sitio, repositorio, unidad="UAM-Iztapalapa"):
+def crear(destino, fuente, sitio, repositorio, unidad="UAM-Iztapalapa", oficial=None):
     destino = os.path.abspath(os.path.expanduser(destino))
     if os.path.exists(os.path.join(destino, "curso.yml")):
         raise FileExistsError(f"{destino} ya tiene un curso.yml")
@@ -79,6 +81,12 @@ def crear(destino, fuente, sitio, repositorio, unidad="UAM-Iztapalapa"):
     os.makedirs(os.path.join(destino, "docs", "curso"), exist_ok=True)
     shutil.copyfile(os.path.expanduser(fuente),
                     os.path.join(destino, "docs", "curso", "programa-analitico.md"))
+    if oficial:
+        if not oficial.lower().endswith(".md"):
+            raise ValueError("el programa oficial debe estar en Markdown (.md); conviértalo "
+                             "una vez desde el PDF y vuelva a intentar")
+        shutil.copyfile(os.path.expanduser(oficial),
+                        os.path.join(destino, "docs", "curso", "programa-oficial.md"))
     with open(os.path.join(destino, "curso.yml"), "w", encoding="utf-8") as f:
         f.write(curso_yml(doc, sitio, repositorio, unidad))
     for raiz, _, archivos in os.walk(BASE):
@@ -93,8 +101,15 @@ def crear(destino, fuente, sitio, repositorio, unidad="UAM-Iztapalapa"):
                     .replace("{MOTOR_VERSION}", __version__)
             with open(final, "w", encoding="utf-8") as f:
                 f.write(contenido)
-            shutil.copymode(origen, final)
+            # los permisos del paquete instalado no son confiables: se fijan aquí
+            os.chmod(final, 0o755 if rel in ("sitio.sh", ".githooks/pre-commit") else 0o644)
     mensajes = [f"Curso creado en {destino}."]
+    for etiqueta, dado in (("Sitio del curso", sitio), ("Repositorio", repositorio)):
+        m = re.search(rf"^\|\s*{etiqueta}\s*\|\s*<?(https?://[^\s|>]+)", texto, re.M)
+        if m and m.group(1).rstrip("/") != dado.rstrip("/"):
+            mensajes.append(f"Aviso: la fuente dice «{etiqueta}: {m.group(1)}», distinto de "
+                            f"{dado}; manda la fuente. Si el curso vive en otra dirección, "
+                            "corrija ese renglón de §1.")
     from .nucleo import ErrorDeFuente, construir
     try:
         r = construir(destino, "escribir")

@@ -132,7 +132,31 @@ def menu(ctx, cfg, plan):
 RE_ENLACE = re.compile(r"(!?\[[^\]]*\]\()([^)\s]+)(\s+\"[^\"]*\")?\)")
 
 
+def _nuevo_objetivo(objetivo, origen, destino):
+    if re.match(r"^(?:[a-z][a-z0-9+.-]*:|/|<)", objetivo, re.I):
+        return objetivo
+    dir_o, dir_d = posixpath.dirname(origen), posixpath.dirname(destino)
+    ruta, _, ancla = objetivo.partition("#")
+    if not ruta:
+        return posixpath.relpath(origen, dir_d) + "#" + ancla
+    absoluta = posixpath.normpath(posixpath.join(dir_o, ruta))
+    return posixpath.relpath(absoluta, dir_d) + (("#" + ancla) if ancla else "")
+
+
 def _reubicar_enlaces(texto, origen, destino):
+    """Los enlaces relativos de la fuente apuntan desde su carpeta; en una página que
+    vive en otra carpeta hay que recalcularlos. El código (en línea o en bloque) no se
+    toca."""
+    partes = re.split(r"(```.*?```|~~~.*?~~~|`[^`\n]*`)", texto, flags=re.S)
+    for i in range(0, len(partes), 2):
+        partes[i] = _reubicar_fuera_de_codigo(partes[i], origen, destino)
+    return "".join(partes)
+
+
+def _reubicar_fuera_de_codigo(texto, origen, destino):
+    texto = re.sub(r"^(\s{0,3}\[[^\]]+\]:\s*)(\S+)",
+                   lambda m: m.group(1) + _nuevo_objetivo(m.group(2), origen, destino),
+                   texto, flags=re.M)
     dir_o, dir_d = posixpath.dirname(origen), posixpath.dirname(destino)
 
     def cambiar(m):
@@ -157,10 +181,15 @@ def pagina_de_secciones(doc, cfg, s_plan):
     else:
         nivel_obj = 1
     for clave_s in s_plan["secciones"]:
-        s = doc.seccion(clave_s)
-        if s is None:
+        halladas = doc.buscar(clave_s)
+        if not halladas:
             raise ValueError(f"paginas: {s_plan['destino']} pide la sección «{clave_s}», "
                              "que no existe en la fuente")
+        if len(halladas) > 1:
+            raise ValueError(f"paginas: {s_plan['destino']} pide «{clave_s}», que "
+                             "corresponde a varias secciones: "
+                             + ", ".join(f"«{h.titulo_completo}»" for h in halladas))
+        s = halladas[0]
         if nivel_base is None:
             nivel_base = s.nivel
         md = doc.markdown_de(s)
@@ -176,7 +205,14 @@ def pagina_de_secciones(doc, cfg, s_plan):
             lineas.append(l)
         partes.append("\n".join(lineas).strip())
     texto = "\n\n".join(partes)
-    texto = re.sub(r"<!--\s*fuente-datos:.*?-->\s*", "", texto, flags=re.S)
+    # enlaces por referencia ([texto][id]) cuya definición está en otra parte de la fuente
+    definiciones = dict(re.findall(r"^\s{0,3}\[([^\]]+)\]:\s*(\S.*)$", doc.texto, re.M))
+    usadas = set(re.findall(r"\]\[([^\]]+)\]", texto)) | \
+        set(re.findall(r"\[([^\]]+)\]\[\]", texto))
+    faltan = [k for k in sorted(usadas) if k in definiciones and
+              not re.search(rf"^\s{{0,3}}\[{re.escape(k)}\]:", texto, re.M)]
+    if faltan:
+        texto += "\n\n" + "\n".join(f"[{k}]: {definiciones[k]}" for k in faltan)
     return _reubicar_enlaces(texto, cfg["fuente"], s_plan["destino"])
 
 
@@ -239,9 +275,12 @@ def _hechos(ctx, cfg):
         if u.get(k) and len(str(u[k])) >= 3:
             criticos[str(u[k])] = f"curso.uea.{k}"
     for g in ctx["curso"]["grupos"]:
-        for k in ("id", "sala"):
+        for k in ("id", "sala", "dias"):
             if g.get(k):
                 criticos[g[k]] = f"curso.grupos[].{k}"
+        for parte in re.split(r"\s+-\s+|,\s*", g.get("sala") or ""):
+            if len(parte) >= 4 and parte != g.get("sala"):
+                criticos[parte] = "curso.grupos[].sala"
     for p in ctx["proyectos"]:
         criticos[p["nombre"]] = f"nombre de {p['id']}"
         criticos[p["slug"]] = f"carpeta de {p['id']}"
@@ -255,7 +294,7 @@ def _hechos(ctx, cfg):
     fechas = list(ctx["cal"]["todas"]) + [v for v in per.values()
                                           if hasattr(v, "weekday")]
     for d in fechas:
-        for f in (L.f_dma, L.f_larga, L.f_corta):
+        for f in (L.f_dma, L.f_larga, L.f_corta, L.f_dm):
             criticos[f(d)] = "fecha del periodo lectivo"
     fijo = {f["fase"] for f in ctx["curso"]["fases"]} | set(cfg["rubrica"]["niveles"]) | \
         set(L.DIAS) | set(L.MESES) | {v for d in cfg["ia_etiquetas"].values()
@@ -297,8 +336,9 @@ def auditar(ctx, cfg, generados):
             if valor not in permitidos and _buscar(valor, fijo):
                 errores.append(f"{nombre}: contiene «{valor}» como texto fijo ({origen}); "
                                "use la variable correspondiente")
-        for m in re.finditer(r"\b[Ss]esi[oó]n(?:es)? (\d+)\b", fijo):
-            if 1 <= int(m.group(1)) <= n_sesiones and m.group(0) not in permitidos:
+        for m in re.finditer(r"\b[Ss]esi[oó]n(?:es)? ((?:\d+(?:,\s*|\s+[ya]\s+))*\d+)\b", fijo):
+            nums = [int(x) for x in re.findall(r"\d+", m.group(1))]
+            if any(1 <= n <= n_sesiones for n in nums) and m.group(0) not in permitidos:
                 errores.append(f"{nombre}: contiene «{m.group(0)}» como texto fijo; el "
                                "número de una sesión cambia con el calendario")
         for valor, origen in otros.items():
@@ -322,17 +362,44 @@ def auditar(ctx, cfg, generados):
             avisos.append(f"{rel} (escrita a mano): contiene "
                           + ", ".join(f"«{v}»" for v in vistos)
                           + "; si cambian en la fuente, esta página no se actualiza sola")
+        u = ctx["curso"]["uea"]
+        otros_correos = sorted({c for c in re.findall(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+", texto)
+                                if u.get("correo") and c != u["correo"]})
+        if otros_correos and u.get("correo") and u["correo"].split("@")[1] in \
+                " ".join(otros_correos):
+            avisos.append(f"{rel} (escrita a mano): menciona {', '.join(otros_correos)}, "
+                          f"distinto del correo de la fuente ({u['correo']})")
+        if u.get("telegram"):
+            otros_tg = sorted({t for t in re.findall(r"t\.me/(\w+)", texto)
+                               if t != u["telegram"]})
+            if otros_tg:
+                avisos.append(f"{rel} (escrita a mano): enlaza Telegram de "
+                              f"{', '.join(otros_tg)}, distinto del de la fuente "
+                              f"({u['telegram']})")
+    # rutas del sitio que la propia fuente menciona (por ejemplo en un anexo) y que no
+    # existen después de generar
+    for ruta in sorted(set(re.findall(r"\bdocs/[\w./-]+", ctx["_doc"].texto))):
+        ruta = ruta.rstrip(".,;")
+        prefijo = ruta.rstrip("/") + "/"
+        if not os.path.exists(os.path.join(raiz, ruta)) and ruta not in generados and \
+                not any(g.startswith(prefijo) for g in generados):
+            avisos.append(f"{cfg['fuente']}: menciona {ruta}, que no existe en el sitio "
+                          "generado")
     return errores, avisos
 
 
 # ------------------------------------------------------------------ escritura
 
 def generados_existentes(raiz):
+    """Todo archivo de docs/ (de cualquier formato) con la marca en su primera línea."""
     res = []
-    for ruta in glob.glob(os.path.join(raiz, "docs", "**", "*.md"), recursive=True):
-        with open(ruta, encoding="utf-8") as f:
-            if MARCA in f.readline():
-                res.append(os.path.relpath(ruta, raiz))
+    for ruta in glob.glob(os.path.join(raiz, "docs", "**", "*"), recursive=True):
+        if not os.path.isfile(ruta):
+            continue
+        with open(ruta, "rb") as f:
+            primera = f.readline(400).decode("utf-8", "ignore")
+        if MARCA in primera:
+            res.append(os.path.relpath(ruta, raiz))
     return sorted(res)
 
 

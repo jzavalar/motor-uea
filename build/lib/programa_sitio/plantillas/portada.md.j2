@@ -34,6 +34,10 @@
 {% for c in curso.evaluacion.componentes %}
 | {{ c.nombre }} | {{ c.peso }} % | {% if c.sesion is defined %}Sesión {{ c.sesion }}{% if c.fecha %} · {{ c.fecha | larga }}{% endif %}{% elif c.en_globales is defined and cal.periodo.globales_inicio is defined %}{{ rango(cal.periodo.globales_inicio, cal.periodo.globales_fin) }}{% else %}{{ c.cuando }}{% endif %} |
 {% endfor %}
+{% if cal.oficial and cal.oficial.recuperacion.evaluaciones is defined %}
+{% set rec = cal.oficial.recuperacion %}
+| Evaluación de recuperación | — | {{ rango(rec.evaluaciones[0], rec.evaluaciones[1]) }} de {{ rec.evaluaciones[1].year }} (inscripción: {{ rec.inscripcion | dm }}) |
+{% endif %}
 
 {% set con_archivo = curso.lecturas | rejectattr("clave", "equalto", config.lecturas.apoyo) | selectattr("archivo") | list %}
 {% if con_archivo %}

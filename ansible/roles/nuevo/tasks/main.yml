@@ -1,0 +1,128 @@
+- name: Comprobar la versión de Ansible
+  ansible.builtin.assert:
+    that: ansible_version.full is version('2.16', '>=')
+    fail_msg: "Se requiere Ansible 2.16 o posterior: sudo dnf upgrade ansible-core"
+    quiet: true
+
+- name: Comprobar los datos obligatorios
+  ansible.builtin.assert:
+    that: [destino | length > 0, fuente | length > 0]
+    fail_msg: "Indique -e destino=<carpeta nueva> -e fuente=<programa analítico .md>"
+    quiet: true
+
+- name: Rutas absolutas
+  ansible.builtin.set_fact:
+    destino_abs: "{{ destino | expanduser | realpath }}"
+    fuente_abs: "{{ fuente | expanduser | realpath }}"
+
+- name: La fuente debe existir
+  ansible.builtin.stat:
+    path: "{{ fuente_abs }}"
+  register: st_fuente
+
+- name: Detenerse si no existe la fuente
+  ansible.builtin.assert:
+    that: st_fuente.stat.exists
+    fail_msg: "No existe {{ fuente_abs }}"
+    quiet: true
+
+- name: Cuenta de GitHub (de gh)
+  ansible.builtin.command: gh api user --jq .login
+  register: gh_usuario
+  changed_when: false
+  when: cuenta_github | length == 0
+
+- name: Datos del repositorio
+  ansible.builtin.set_fact:
+    cuenta: "{{ cuenta_github if cuenta_github | length > 0 else gh_usuario.stdout }}"
+
+- name: URL del sitio y del repositorio
+  ansible.builtin.set_fact:
+    url_sitio: "https://{{ cuenta | lower }}.github.io/{{ nombre_repo }}/"
+    url_repo: "https://github.com/{{ cuenta }}/{{ nombre_repo }}"
+
+- name: Crear la carpeta del curso
+  ansible.builtin.file:
+    path: "{{ destino_abs }}"
+    state: directory
+
+- name: Entorno virtual con el motor
+  ansible.builtin.pip:
+    name: "{{ motor_origen if motor_origen | length > 0 else 'programa-sitio @ git+' ~ motor_repositorio ~ '.git@v' ~ motor_version }}"
+    virtualenv: "{{ destino_abs }}/.venv"
+    virtualenv_command: python3 -m venv
+
+- name: Armar el repositorio del curso a partir de su programa analítico
+  ansible.builtin.command:
+    argv:
+      - "{{ destino_abs }}/.venv/bin/programa-sitio"
+      - nuevo
+      - "{{ destino_abs }}"
+      - --fuente
+      - "{{ fuente_abs }}"
+      - --sitio
+      - "{{ url_sitio }}"
+      - --repositorio
+      - "{{ url_repo }}"
+      - --unidad
+      - "{{ unidad_corta }}"
+    creates: "{{ destino_abs }}/curso.yml"
+  register: armado
+
+- name: Resultado del armado
+  ansible.builtin.debug:
+    msg: "{{ armado.stdout_lines | default(['El curso ya existía; no se tocó.']) }}"
+
+- name: Inicializar git
+  ansible.builtin.command:
+    cmd: git init -b main
+    chdir: "{{ destino_abs }}"
+    creates: "{{ destino_abs }}/.git"
+
+- name: Activar el gancho pre-commit
+  ansible.builtin.command:
+    cmd: git config core.hooksPath .githooks
+    chdir: "{{ destino_abs }}"
+  changed_when: false
+
+- name: ¿Hay commits?
+  ansible.builtin.command:
+    cmd: git rev-parse --verify HEAD
+    chdir: "{{ destino_abs }}"
+  register: hay_head
+  changed_when: false
+  failed_when: false
+
+- name: Primer commit
+  when: hay_head.rc != 0
+  block:
+    - name: Agregar todo
+      ansible.builtin.command:
+        cmd: git add -A
+        chdir: "{{ destino_abs }}"
+    - name: Confirmar
+      ansible.builtin.command:
+        argv: [git, commit, -m, "Crea el sitio de la UEA a partir de su programa analítico"]
+        chdir: "{{ destino_abs }}"
+
+- name: Crear el repositorio en GitHub, subir y activar Pages
+  when: crear_en_github | bool
+  block:
+    - name: Crear el repositorio público y subir main
+      ansible.builtin.command:
+        argv: [gh, repo, create, "{{ cuenta }}/{{ nombre_repo }}", --public,
+               --source, "{{ destino_abs }}", --remote, origin, --push]
+        chdir: "{{ destino_abs }}"
+    - name: Publicar Pages con GitHub Actions
+      ansible.builtin.command:
+        argv: [gh, api, -X, POST, "repos/{{ cuenta }}/{{ nombre_repo }}/pages",
+               -f, build_type=workflow]
+      register: pages
+      failed_when: pages.rc != 0 and 'already' not in (pages.stderr | lower)
+
+- name: Siguiente paso
+  ansible.builtin.debug:
+    msg:
+      - "Curso listo en {{ destino_abs }}."
+      - "{{ ('Sitio: ' ~ url_sitio ~ ' (en unos minutos)') if crear_en_github | bool else 'Para publicarlo: gh repo create ' ~ cuenta ~ '/' ~ nombre_repo ~ ' --public --source ' ~ destino_abs ~ ' --push, y en Settings → Pages elija GitHub Actions.' }}"
+      - "En adelante, dentro de la carpeta: ./sitio.sh preparar (una vez), servir, construir, publicar."

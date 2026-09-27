@@ -1,0 +1,46 @@
+- name: Instalar con dnf git, la CLI de GitHub y Python
+  ansible.builtin.dnf:
+    name: "{{ paquetes_fedora }}"
+    state: present
+  become: true
+  when: not omitir_dnf | bool
+
+- name: Crear el entorno virtual del curso e instalar el motor (versión de requirements.txt)
+  ansible.builtin.pip:
+    requirements: "{{ omit if motor_origen | length > 0 else repo ~ '/requirements.txt' }}"
+    name: "{{ motor_origen if motor_origen | length > 0 else omit }}"
+    virtualenv: "{{ venv }}"
+    virtualenv_command: python3 -m venv
+    state: latest
+
+- name: Consultar la versión instalada del motor
+  ansible.builtin.command: "{{ programa_sitio }} version"
+  register: version_motor
+  changed_when: false
+
+- name: Activar el gancho pre-commit del repositorio (regenera antes de cada commit)
+  ansible.builtin.command:
+    cmd: git config core.hooksPath .githooks
+    chdir: "{{ repo }}"
+  changed_when: false
+
+- name: Asegurar que lo generado localmente no se versione
+  ansible.builtin.lineinfile:
+    path: "{{ repo }}/.gitignore"
+    line: "{{ item }}"
+    create: true
+  loop: [site/, .venv/, .ansible/, __pycache__/]
+
+- name: Comprobar el estado del sitio
+  ansible.builtin.command:
+    cmd: "{{ programa_sitio }} construir --verificar"
+    chdir: "{{ repo }}"
+  register: estado
+  changed_when: false
+  failed_when: false
+
+- name: Resultado
+  ansible.builtin.debug:
+    msg:
+      - "Motor programa-sitio {{ version_motor.stdout }} instalado en {{ venv }}."
+      - "{{ 'El sitio coincide con la fuente.' if estado.rc == 0 else 'El sitio no coincide con la fuente o la fuente tiene errores: ejecute ./sitio.sh construir.' }}"

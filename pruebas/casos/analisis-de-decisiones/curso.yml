@@ -1,0 +1,38 @@
+# Caso de prueba: Análisis de Decisiones (2211092), 26-O. Sigue el modelo de su
+# Anexo B: cada sección indicada se vuelve una página, y el programa completo también
+# se publica tal cual.
+
+version_motor: "1.0.0"
+
+sitio:
+  unidad_corta: UAM-Iztapalapa
+
+rubrica:
+  niveles: [ausente, insuficiente, suficiente, logrado]
+
+proyecto:
+  pagina: seccion
+
+paginas:
+  - {destino: docs/curso/instrumento-de-campo.md, secciones: ["Trabajo de campo"], menu: Instrumento de campo}
+  - {destino: docs/curso/protocolo-ia.md, secciones: ["Uso de asistentes de inteligencia artificial generativa (IAG)"], menu: Uso de IA}
+  - {destino: docs/curso/calendario.md, secciones: ["Programación de las sesiones"], menu: Calendario}
+  - {destino: docs/curso/evaluacion.md, secciones: ["Evaluación"], menu: Evaluación}
+
+tablas:
+  roles: {columnas: [Rol, Función]}
+  consecuencias: {columnas: [Situación, Consecuencia], forma: filas}
+
+extraer:
+  equipos:
+    seccion: Organización de los equipos
+    patron: 'Se forman (?P<n>\w+) equipos de (?P<integrantes>\w+) integrantes'
+    tipos: {n: numero, integrantes: numero}
+  asistencia:
+    patron: 'asistido al menos al (\d+)\s*%'
+    tipo: entero
+    destino: evaluacion.asistencia_minima
+
+validar:
+  - que: "curso.equipos.integrantes >= 3 and curso.equipos.integrantes <= 5"
+    mensaje: "§5.5: equipos de {{ curso.equipos.integrantes }}; el programa oficial fija de 3 a 5"

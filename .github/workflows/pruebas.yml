@@ -1,0 +1,26 @@
+name: Pruebas del motor
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -e '.[pruebas]'
+      - run: python -m pytest -q
+      - name: Sintaxis de los playbooks
+        run: |
+          pip install ansible-core
+          ansible-galaxy collection install ./ansible -p /tmp/colecciones
+          for p in preparar construir publicar nuevo; do
+            ANSIBLE_COLLECTIONS_PATH=/tmp/colecciones ansible-playbook --syntax-check jzavalar.programa_sitio.$p
+          done

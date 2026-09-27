@@ -1,0 +1,28 @@
+- name: Comprobar la versión de Ansible
+  ansible.builtin.assert:
+    that: ansible_version.full is version(ansible_minimo, '>=')
+    fail_msg: "Se requiere Ansible {{ ansible_minimo }} o posterior (hay {{ ansible_version.full }}): sudo dnf upgrade ansible-core"
+    quiet: true
+
+- name: Comprobar que el sistema es Fedora {{ fedora_minima }} o posterior
+  ansible.builtin.assert:
+    that: >-
+      permitir_otro_sistema | bool or
+      (ansible_facts.distribution == 'Fedora' and
+       ansible_facts.distribution_major_version | int >= fedora_minima | int)
+    fail_msg: >-
+      Esta colección está preparada para Fedora {{ fedora_minima }} o posterior; el sistema
+      es {{ ansible_facts.distribution }} {{ ansible_facts.distribution_version }}. Para
+      intentarlo de todos modos: -e permitir_otro_sistema=true
+    quiet: true
+
+- name: Comprobar que {{ repo }} es un repositorio de curso
+  ansible.builtin.stat:
+    path: "{{ repo }}/curso.yml"
+  register: curso_yml
+
+- name: Detenerse si no hay curso.yml
+  ansible.builtin.assert:
+    that: curso_yml.stat.exists
+    fail_msg: "{{ repo }} no tiene curso.yml. Para una UEA nueva use el playbook jzavalar.programa_sitio.nuevo."
+    quiet: true

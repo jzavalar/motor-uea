@@ -1,0 +1,8 @@
+- name: programa-sitio · nuevo curso
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  tasks:
+    - name: Armar el repositorio de la UEA
+      ansible.builtin.include_role:
+        name: jzavalar.programa_sitio.nuevo

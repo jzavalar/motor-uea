@@ -1,0 +1,15 @@
+- name: programa-sitio · publicar
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  tasks:
+    - name: Comprobaciones comunes
+      ansible.builtin.include_role:
+        name: jzavalar.programa_sitio.comun
+        public: true
+    - name: Regenerar y validar antes de publicar
+      ansible.builtin.include_role:
+        name: jzavalar.programa_sitio.construir
+    - name: Publicar
+      ansible.builtin.include_role:
+        name: jzavalar.programa_sitio.publicar

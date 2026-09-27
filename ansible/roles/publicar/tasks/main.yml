@@ -1,0 +1,95 @@
+- name: Validar el modo de publicación
+  ansible.builtin.assert:
+    that: modo in ['directo', 'pr']
+    fail_msg: "modo debe ser «directo» o «pr» (se recibió «{{ modo }}»)"
+    quiet: true
+
+- name: Rama actual
+  ansible.builtin.command:
+    cmd: git rev-parse --abbrev-ref HEAD
+    chdir: "{{ repo }}"
+  register: rama
+  changed_when: false
+
+- name: Publicar directo solo desde {{ rama_base }}
+  ansible.builtin.assert:
+    that: modo == 'pr' or rama.stdout == rama_base
+    fail_msg: "Está en la rama «{{ rama.stdout }}»; cámbiese a {{ rama_base }} o publique con --pr."
+    quiet: true
+
+- name: Qué hay para publicar
+  ansible.builtin.command:
+    cmd: git status --porcelain
+    chdir: "{{ repo }}"
+  register: pendientes
+  changed_when: false
+
+- name: Commits locales que aún no están en GitHub
+  ansible.builtin.command:
+    cmd: "git rev-list --count origin/{{ rama_base }}..HEAD"
+    chdir: "{{ repo }}"
+  register: adelante
+  changed_when: false
+  failed_when: false
+
+- name: Nada que publicar
+  ansible.builtin.debug:
+    msg: "No hay cambios que publicar: el repositorio coincide con GitHub."
+  when: pendientes.stdout == "" and (adelante.stdout | default('0') | int) == 0
+
+- name: Publicar
+  when: pendientes.stdout != "" or (adelante.stdout | default('0') | int) > 0
+  block:
+    - name: Archivos que se van a publicar
+      ansible.builtin.debug:
+        msg: "{{ pendientes.stdout_lines + ([] if (adelante.stdout | default('0') | int) == 0 else [adelante.stdout ~ ' commit(s) locales']) }}"
+
+    - name: Crear la rama de trabajo
+      ansible.builtin.command:
+        cmd: "git switch -c {{ rama_trabajo }}"
+        chdir: "{{ repo }}"
+      when: modo == 'pr'
+
+    - name: Agregar los cambios
+      ansible.builtin.command:
+        cmd: git add -A
+        chdir: "{{ repo }}"
+      when: pendientes.stdout != ""
+
+    - name: Confirmar (el gancho pre-commit regenera y valida)
+      ansible.builtin.command:
+        argv: [git, commit, -m, "{{ mensaje }}"]
+        chdir: "{{ repo }}"
+      when: pendientes.stdout != ""
+
+    - name: Traer lo que haya en GitHub antes de subir
+      ansible.builtin.command:
+        cmd: "git pull --rebase origin {{ rama_base }}"
+        chdir: "{{ repo }}"
+      when: modo == 'directo'
+      changed_when: false
+
+    - name: Subir a {{ rama_base }}
+      ansible.builtin.command:
+        cmd: "git push origin HEAD:{{ rama_base }}"
+        chdir: "{{ repo }}"
+      when: modo == 'directo'
+
+    - name: Subir la rama de trabajo
+      ansible.builtin.command:
+        cmd: "git push -u origin {{ rama_trabajo }}"
+        chdir: "{{ repo }}"
+      when: modo == 'pr'
+
+    - name: Abrir el Pull Request
+      ansible.builtin.command:
+        argv: [gh, pr, create, --base, "{{ rama_base }}", --head, "{{ rama_trabajo }}",
+               --title, "{{ mensaje }}", --body,
+               "Generado con ./sitio.sh publicar --pr a partir del programa analítico."]
+        chdir: "{{ repo }}"
+      register: pr
+      when: modo == 'pr'
+
+    - name: Resultado
+      ansible.builtin.debug:
+        msg: "{{ ('Pull Request: ' ~ pr.stdout ~ '. Cuando lo fusione en GitHub: git switch ' ~ rama_base ~ ' && git pull') if modo == 'pr' else ('Publicado en ' ~ rama_base ~ '; GitHub Actions actualizará el sitio en unos minutos.') }}"

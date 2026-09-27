@@ -1,0 +1,15 @@
+# Carpeta donde se crea el repositorio de la UEA nueva
+destino: ""
+# Programa analítico en Markdown (se copia a docs/curso/programa-analitico.md)
+fuente: ""
+# Nombre del repositorio en GitHub (p. ej. analisis-de-decisiones)
+nombre_repo: "{{ destino | basename }}"
+# Cuenta de GitHub; si se deja vacía, se toma de gh (gh api user)
+cuenta_github: ""
+unidad_corta: UAM-Iztapalapa
+# true: crea el repositorio público en GitHub, sube el primer commit y activa Pages
+crear_en_github: false
+motor_repositorio: https://github.com/jzavalar/programa-sitio
+motor_version: "1.0.0"
+# Para probar el motor desde una copia local (ruta o URL pip); vacío = el de GitHub
+motor_origen: ""

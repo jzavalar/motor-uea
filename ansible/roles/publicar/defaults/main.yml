@@ -1,0 +1,5 @@
+# directo: commit y push a main. pr: rama nueva, push y Pull Request con gh.
+modo: directo
+rama_base: main
+mensaje: Actualiza el sitio a partir del programa analítico
+rama_trabajo: "actualizacion-{{ ansible_date_time.iso8601_basic_short }}"

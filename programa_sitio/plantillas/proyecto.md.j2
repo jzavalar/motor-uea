@@ -1,0 +1,45 @@
+{#
+  Página genérica de un proyecto: se usa para todo proyecto de la sección 6 que no
+  tenga plantilla propia en el curso. Solo usa lo que dice la fuente, así que un
+  proyecto nuevo aparece en el sitio en cuanto se escribe en el programa analítico.
+#}
+{% import "_motor.j2" as motor with context %}
+{{ motor.encabezado_proyecto(p) }}
+
+{% if p.sintesis %}
+{{ p.sintesis | mayus | punto }}
+
+{% endif %}
+---
+
+## El reto
+
+{{ p.proposito }}
+
+{% if p.condiciones.titulo %}
+**{{ p.condiciones.titulo }}.** {{ p.condiciones.texto }}
+{% endif %}
+
+---
+
+{% for v in p.sesiones %}
+{{ motor.titulo_sesion(v) }}
+
+{{ (v.actividad_larga if v.actividad_larga is defined else v.actividad) | punto }}
+
+{{ motor.producto(v) }}
+
+{% endfor %}
+---
+
+## El expediente
+
+{{ motor.tabla_expediente(p) }}
+
+## Criterios de la rúbrica
+
+{{ motor.criterios(p) }}
+
+---
+
+{{ motor.seccion_evaluacion(p) }}

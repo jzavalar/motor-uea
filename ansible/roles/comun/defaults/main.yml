@@ -1,0 +1,9 @@
+# Raíz del repositorio del curso (./sitio.sh la pasa con -e repo=...)
+repo: "{{ lookup('env', 'PWD') }}"
+fedora_minima: 44
+ansible_minimo: "2.16"
+# Para probar fuera de Fedora (por ejemplo, en integración continua)
+permitir_otro_sistema: false
+venv: "{{ repo }}/.venv"
+programa_sitio: "{{ venv }}/bin/programa-sitio"
+mkdocs: "{{ venv }}/bin/mkdocs"

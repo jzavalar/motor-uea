@@ -1,0 +1,12 @@
+- name: programa-sitio · construir
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  tasks:
+    - name: Comprobaciones comunes
+      ansible.builtin.include_role:
+        name: jzavalar.programa_sitio.comun
+        public: true
+    - name: Construir
+      ansible.builtin.include_role:
+        name: jzavalar.programa_sitio.construir

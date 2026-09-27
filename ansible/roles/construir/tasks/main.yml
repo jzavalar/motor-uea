@@ -1,0 +1,33 @@
+- name: Comprobar que el motor está instalado
+  ansible.builtin.stat:
+    path: "{{ programa_sitio }}"
+  register: motor
+
+- name: Detenerse si falta el motor
+  ansible.builtin.assert:
+    that: motor.stat.exists
+    fail_msg: "Falta el motor en {{ venv }}: ejecute primero ./sitio.sh preparar"
+    quiet: true
+
+- name: Regenerar el sitio a partir de la fuente (valida y audita antes de escribir)
+  ansible.builtin.command:
+    cmd: "{{ programa_sitio }} construir"
+    chdir: "{{ repo }}"
+  register: generacion
+  changed_when: "'Escritos 0 de' not in generacion.stdout or 'borrado:' in generacion.stdout"
+
+- name: Qué se regeneró
+  ansible.builtin.debug:
+    msg: "{{ generacion.stdout_lines }}"
+
+- name: Comprobar que el sitio compila sin enlaces rotos
+  ansible.builtin.command:
+    cmd: "{{ mkdocs }} build --strict --site-dir {{ repo }}/site"
+    chdir: "{{ repo }}"
+  changed_when: false
+
+- name: Quitar el sitio de prueba (no se versiona)
+  ansible.builtin.file:
+    path: "{{ repo }}/site"
+    state: absent
+  changed_when: false

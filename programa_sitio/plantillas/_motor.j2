@@ -1,0 +1,60 @@
+{# Macros de las plantillas predeterminadas del motor. Las plantillas de un curso
+   pueden importarlas: {% import "_motor.j2" as motor with context %} #}
+
+{% macro ruta(destino, desde="docs/") -%}
+{{ destino[desde | length:] if destino.startswith(desde) else destino }}
+{%- endmacro %}
+
+{% macro ia(codigo, estilo="calendario_sitio") %}{{ curso.ia_etiquetas[estilo][codigo] }}{% endmacro %}
+
+{% macro encabezado_proyecto(p) -%}
+# {{ p.id }} · {{ p.nombre }}
+
+**Sesiones {{ p.nums | nums }}{% if p.rango is defined %} · del {{ p.rango }} de {{ p.ultima.fecha.year }}{% endif %}**
+{% if p.peso_exp is defined %}
+
+**Pesa:** expediente, {{ p.peso_exp }} %; {{ p.eval.nombre }}, {{ p.eval.peso }} %
+{% endif %}
+{%- endmacro %}
+
+{% macro titulo_sesion(v) -%}
+## Sesión {{ v.num }} · {{ v.fase }}{% if v.fecha %} ({{ v.fecha | larga }}){% endif %}
+{%- endmacro %}
+
+{% macro producto(v) -%}
+{% if v.producto is defined and v.producto %}**Producto de la sesión:** {{ v.producto | punto }} {% endif %}{{ "**Sin IA.**" if v.ia == "no" else ("IA obligatoria, con bitácora." if v.ia == "si" else "") }}
+{%- endmacro %}
+
+{% macro tabla_expediente(p) %}
+{% set con_rol = p.expediente | selectattr("rol", "defined") | list | length > 0 %}
+| # | Componente |{% if con_rol %} Rol que lo lidera |{% endif %}
+
+|---|---|{% if con_rol %}---|{% endif %}
+
+{% for e in p.expediente %}
+| {{ loop.index }} | {{ e.texto }}{% if e.insumo_de is defined %} (**insumo de {{ e.insumo_de }}**){% endif %} |{% if con_rol %} {{ e.rol }} |{% endif %}
+
+{% endfor %}
+{% endmacro %}
+
+{% macro criterios(p) %}
+{% for c in p.criterios %}
+- **{{ c.nombre }}**{{ (" (" ~ c.nota ~ ")") if c.nota is defined else "" }}
+{% endfor %}
+{% endmacro %}
+
+{% macro seccion_evaluacion(p) -%}
+{% if p.eval is defined %}
+## {{ p.eval.nombre }}
+
+{{ p.evaluacion.previo ~ " " if p.evaluacion.previo is defined else "" }}{{ ("Duración: " ~ p.eval.duracion ~ " minutos. ") if (p.eval.duracion is defined and not (p.evaluacion.previo is defined and "minutos" in p.evaluacion.previo)) else "" }}{{ ("**Todas las preguntas son sobre " ~ p.evaluacion.ambito ~ ".**") if p.evaluacion.ambito else "" }}
+
+{% for r in p.evaluacion.reactivos %}
+{{ loop.index }}. {{ r | mayus | punto }}
+{% endfor %}
+{% if p.evaluacion.posterior is defined %}
+
+{{ p.evaluacion.posterior }}
+{% endif %}
+{% endif %}
+{%- endmacro %}

@@ -1,0 +1,14 @@
+namespace: jzavalar
+name: programa_sitio
+version: 1.0.0
+readme: README.md
+authors:
+  - Jesús Zavala Ruiz
+description: >-
+  Prepara Fedora 44+ y genera, valida y publica el sitio de una UEA a partir de su
+  programa analítico, con el motor programa-sitio.
+license:
+  - MIT
+tags: [mkdocs, education, fedora, github]
+repository: https://github.com/jzavalar/programa-sitio
+build_ignore: []

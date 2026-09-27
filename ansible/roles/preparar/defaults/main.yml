@@ -1,0 +1,6 @@
+paquetes_fedora: [git, gh, python3, python3-pip]
+# true en integración continua o si los paquetes ya están instalados
+omitir_dnf: false
+# Para probar una copia local del motor en lugar de la de requirements.txt
+# (p. ej. -e motor_origen=git+file:///ruta/programa-sitio.git@v1.0.0)
+motor_origen: ""

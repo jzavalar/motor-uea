@@ -1,6 +1,0 @@
-# Colección de Ansible que usa ./sitio.sh. Cambie la versión aquí y en requirements.txt
-# al mismo tiempo.
-collections:
-  - name: git+{MOTOR_REPOSITORIO}.git#/ansible/
-    type: git
-    version: v{MOTOR_VERSION}

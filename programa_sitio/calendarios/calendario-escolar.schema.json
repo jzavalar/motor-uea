@@ -1,0 +1,413 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/jzavalar/programa-sitio/main/programa_sitio/calendarios/calendario-escolar.schema.json",
+  "title": "Calendario escolar de la UAM (un documento aprobado)",
+  "description": "Transcripción, sin interpretación, de UN calendario escolar aprobado por el Colegio Académico (el ordinario de un año escolar, o uno que lo modifica por causa de fuerza mayor). Reglas: (1) toda fecha es AAAA-MM-DD; (2) un periodo {inicio, fin} abarca todos los días naturales entre ambos, inclusive; su inicio y su fin son días hábiles del color que representa (no días de descanso); (3) un conjunto de días (inscripciones, evaluaciones, actas) es la lista explícita de los días marcados, en orden ascendente y sin repetir, nunca un rango; (4) dentro de 'cobertura', cada día hábil que no es de descanso pertenece a exactamente uno de: un trimestre (azul), un periodo intertrimestral (amarillo), unas vacaciones (blanco) o el registro de calificaciones posterior a un trimestre; (5) se transcribe solo lo que el documento muestra. Los trimestres se nombran por año natural en el orden Invierno (AA-I), Primavera (AA-P), Otoño (AA-O). La coherencia la comprueba: programa-sitio calendario ARCHIVO.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formato",
+    "documento",
+    "simbologia",
+    "cobertura",
+    "descansos",
+    "periodos_intertrimestrales",
+    "vacaciones",
+    "trimestres"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Ruta o URL de este esquema, para los editores."
+    },
+    "formato": {
+      "const": 3,
+      "description": "Versión de este formato de archivo."
+    },
+    "documento": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nombre",
+        "anio_escolar",
+        "institucion",
+        "aprobacion"
+      ],
+      "properties": {
+        "nombre": {
+          "type": "string",
+          "pattern": "^Calendario Escolar \\d{4}-\\d{4}( .+)?$",
+          "description": "Como lo titula el documento: «Calendario Escolar 2024-2025»; un calendario modificado puede llevar un añadido («… (modificado)»)."
+        },
+        "anio_escolar": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{4}$",
+          "description": "AAAA-AAAA: el año escolar al que pertenece."
+        },
+        "institucion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aprobacion": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "organo",
+            "sesion",
+            "fecha"
+          ],
+          "properties": {
+            "organo": {
+              "type": "string",
+              "minLength": 1,
+              "description": "«Colegio Académico»."
+            },
+            "sesion": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Número de la sesión."
+            },
+            "fecha": {
+              "$ref": "#/$defs/fecha",
+              "description": "Fecha de la sesión."
+            },
+            "acuerdo": {
+              "type": "string",
+              "description": "Número de acuerdo, si el documento lo da."
+            }
+          }
+        },
+        "modifica": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Solo en un calendario que modifica otro ya aprobado (huelga, contingencia, etc.): los documentos que sustituye, por año escolar y sesión de aprobación. Dentro de la cobertura de este documento, lo que dice prevalece sobre lo que decían aquellos.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "anio_escolar",
+              "sesion"
+            ],
+            "properties": {
+              "anio_escolar": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{4}$"
+              },
+              "sesion": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "motivo": {
+          "type": "string",
+          "description": "Causa de la modificación, como la enuncie el acuerdo (p. ej. «huelga»)."
+        },
+        "fuente": {
+          "type": "string",
+          "description": "Documento del que se transcribió (archivo o URL)."
+        },
+        "transcripcion": {
+          "type": "string",
+          "description": "Quién transcribió, cuándo, y notas de la transcripción."
+        }
+      }
+    },
+    "simbologia": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "La simbología tal como la imprime el documento. Los símbolos son fijos (> < • * △ Φ ® ▲); cambian las siglas y los textos (p. ej. «Entrega de actas (EA)» o «Registro de calificaciones en actas (RCA)»; el artículo del RESUAM de la inscripción).",
+      "required": [
+        "inscripcion_reinscripcion",
+        "evaluaciones_globales",
+        "registro_de_calificaciones",
+        "inscripcion_recuperacion",
+        "evaluaciones_recuperacion",
+        "registro_recuperacion"
+      ],
+      "properties": {
+        "inscripcion_reinscripcion": {
+          "$ref": "#/$defs/simbolo",
+          "description": "• Periodo de inscripción (alumnos de nuevo ingreso) y, simultáneamente, de reinscripción (a partir del segundo trimestre de estudios)."
+        },
+        "evaluaciones_globales": {
+          "$ref": "#/$defs/simbolo",
+          "description": "*"
+        },
+        "registro_de_calificaciones": {
+          "$ref": "#/$defs/simbolo",
+          "description": "△"
+        },
+        "inscripcion_recuperacion": {
+          "$ref": "#/$defs/simbolo",
+          "description": "Φ"
+        },
+        "evaluaciones_recuperacion": {
+          "$ref": "#/$defs/simbolo",
+          "description": "®"
+        },
+        "registro_recuperacion": {
+          "$ref": "#/$defs/simbolo",
+          "description": "▲"
+        }
+      }
+    },
+    "cobertura": {
+      "$ref": "#/$defs/periodo",
+      "description": "Primer y último día que muestra el documento (del primer día del primer mes al último del último mes). Toda fecha del archivo cae aquí; fuera de aquí el documento no afirma nada."
+    },
+    "descansos": {
+      "type": "array",
+      "description": "Días de descanso obligatorio (en gris), en orden ascendente, incluidos los que caen en sábado o domingo.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "fecha"
+        ],
+        "properties": {
+          "fecha": {
+            "$ref": "#/$defs/fecha"
+          },
+          "nota": {
+            "type": "string",
+            "description": "Solo si el documento dice algo del día."
+          }
+        }
+      }
+    },
+    "periodos_intertrimestrales": {
+      "type": "array",
+      "description": "Periodos inter-trimestrales (en amarillo): los días entre un trimestre y el siguiente dedicados a inscripción/reinscripción y a las evaluaciones de recuperación, sin clases. Un periodo por cada bloque amarillo, en orden; si un bloque se interrumpe por vacaciones, son dos periodos.",
+      "items": {
+        "$ref": "#/$defs/periodo"
+      }
+    },
+    "vacaciones": {
+      "type": "array",
+      "description": "Vacaciones (días hábiles en blanco): las de fin de año (dentro o fuera de un trimestre) y las de verano, de cuatro semanas, antes del trimestre de Otoño. Si el documento solo muestra una parte, se transcribe esa parte (con una nota).",
+      "items": {
+        "$ref": "#/$defs/periodo"
+      }
+    },
+    "trimestres": {
+      "type": "array",
+      "minItems": 1,
+      "description": "En orden cronológico. Completos: los que el documento enuncia en su encabezado («Trimestre 25-I: del … al …»). Parciales (\"parcial\": true): los que no enuncia, pero de los que muestra algunos días (la recuperación del trimestre anterior; la inscripción, el inicio o las primeras semanas del siguiente).",
+      "items": {
+        "$ref": "#/$defs/trimestre"
+      }
+    }
+  },
+  "$defs": {
+    "fecha": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "periodo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inicio",
+        "fin"
+      ],
+      "properties": {
+        "inicio": {
+          "$ref": "#/$defs/fecha"
+        },
+        "fin": {
+          "$ref": "#/$defs/fecha"
+        },
+        "nota": {
+          "type": "string"
+        }
+      }
+    },
+    "dias": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/fecha"
+      },
+      "description": "Lista explícita de días, en orden ascendente."
+    },
+    "simbolo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sigla",
+        "texto"
+      ],
+      "properties": {
+        "sigla": {
+          "type": "string",
+          "pattern": "^[A-Z]{2,4}$"
+        },
+        "texto": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "semana": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "orden",
+        "etiqueta",
+        "inicio",
+        "fin"
+      ],
+      "description": "Una semana lectiva de la columna SEM (cuando la columna trae un número, no siglas de sucesos). inicio y fin son el primer y el último día de clases de esa semana: de lunes a viernes, salvo en la primera (empieza el día de inicio de clases), en la última (termina el día de terminación de clases) y donde empiezan o terminan unas vacaciones. Los descansos obligatorios no recortan la semana.",
+      "properties": {
+        "orden": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Posición: 1, 2, 3… sin saltos. La «11 bis» equivale a la semana 12 (a menudo recortada): orden 12."
+        },
+        "etiqueta": {
+          "type": "string",
+          "pattern": "^\\d{1,2}( bis)?$",
+          "description": "Como aparece en la columna SEM: «1», «11», «11 bis»."
+        },
+        "inicio": {
+          "$ref": "#/$defs/fecha"
+        },
+        "fin": {
+          "$ref": "#/$defs/fecha"
+        }
+      }
+    },
+    "recuperacion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inscripcion": {
+          "$ref": "#/$defs/dias",
+          "description": "Φ"
+        },
+        "evaluaciones": {
+          "$ref": "#/$defs/dias",
+          "description": "®"
+        },
+        "registro_de_calificaciones": {
+          "$ref": "#/$defs/dias",
+          "description": "▲"
+        }
+      }
+    },
+    "trimestre": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clave",
+        "nombre"
+      ],
+      "properties": {
+        "clave": {
+          "type": "string",
+          "pattern": "^\\d{2}-[IPO]$",
+          "description": "AA-E: año natural de dos dígitos y estación: I (Invierno), P (Primavera), O (Otoño)."
+        },
+        "nombre": {
+          "type": "string",
+          "pattern": "^\\d{2}-(Invierno|Primavera|Otoño)$"
+        },
+        "parcial": {
+          "type": "boolean",
+          "description": "true: el documento no enuncia este trimestre en su encabezado y solo muestra algunos de sus días. Nunca se usa solo para contrastar un programa analítico."
+        },
+        "periodo": {
+          "$ref": "#/$defs/periodo",
+          "description": "Como lo enuncia el encabezado («Del 21 de octubre de 2024 al 24 de enero de 2025»)."
+        },
+        "tramo_visible": {
+          "$ref": "#/$defs/periodo",
+          "description": "Solo en un trimestre parcial: los días del trimestre (en azul) que muestra este documento, del primero al último día hábil azul."
+        },
+        "clases": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "inicio": {
+              "$ref": "#/$defs/fecha",
+              "description": ">"
+            },
+            "fin": {
+              "$ref": "#/$defs/fecha",
+              "description": "<"
+            }
+          }
+        },
+        "semanas": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/semana"
+          },
+          "description": "Las semanas numeradas de la columna SEM, en orden. Entre dos semanas seguidas solo puede haber semanas sin número si caen en vacaciones."
+        },
+        "inscripcion_reinscripcion": {
+          "$ref": "#/$defs/dias",
+          "description": "Inscripción o reinscripción para este trimestre (•)."
+        },
+        "evaluaciones_globales": {
+          "$ref": "#/$defs/dias",
+          "description": "*"
+        },
+        "registro_de_calificaciones": {
+          "$ref": "#/$defs/dias",
+          "description": "△ (puede terminar después del último día del trimestre)."
+        },
+        "recuperacion": {
+          "$ref": "#/$defs/recuperacion",
+          "description": "Evaluaciones de recuperación de este trimestre (se aplican después de él)."
+        }
+      },
+      "if": {
+        "not": {
+          "required": [
+            "parcial"
+          ],
+          "properties": {
+            "parcial": {
+              "const": true
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "periodo",
+          "clases",
+          "semanas",
+          "evaluaciones_globales",
+          "registro_de_calificaciones"
+        ],
+        "properties": {
+          "clases": {
+            "required": [
+              "inicio",
+              "fin"
+            ]
+          }
+        },
+        "not": {
+          "required": [
+            "tramo_visible"
+          ]
+        }
+      },
+      "else": {
+        "not": {
+          "required": [
+            "periodo"
+          ]
+        }
+      }
+    }
+  }
+}

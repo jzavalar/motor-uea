@@ -1,5 +1,0 @@
-site/
-.venv/
-.ansible/
-__pycache__/
-revision.md

@@ -15,7 +15,7 @@ Ansible, MkDocs Material y GitHub Pages.
 | Insumo | Dónde vive | Quién lo cambia |
 |---|---|---|
 | **Programa de estudios oficial** de la UEA | `docs/curso/programa-oficial.md` en el repositorio del curso (el PDF de la UAM convertido una vez a Markdown) | Nadie: es la referencia |
-| **Calendario escolar** vigente | `programa_sitio/calendarios/AAAA-AAAA.yml`, en este motor, un archivo por año escolar | Se actualiza cada año, o cuando el Colegio Académico lo modifique (ver *Calendario escolar*) |
+| **Calendario escolar** vigente | `programa_sitio/calendarios/AAAA-AAAA.json`, en este motor, un archivo por año escolar, con un formato validado por esquema ([`docs/formato-calendario-escolar.md`](docs/formato-calendario-escolar.md)) | Se actualiza cada año, o cuando el Colegio Académico lo modifique (ver *Calendario escolar*) |
 | **Programa analítico** | `docs/curso/programa-analitico.md` en el repositorio del curso | El profesor, con su asistente de IA |
 
 El programa analítico se redacta a partir de los otros dos, por iteraciones: el motor
@@ -30,11 +30,11 @@ Este repositorio contiene:
 | Carpeta | Qué es |
 |---|---|
 | `programa_sitio/` | El motor (paquete de Python): analiza la fuente, valida, genera y audita. Incluye un complemento de MkDocs y la orden `programa-sitio`. |
-| `programa_sitio/calendarios/` | El calendario escolar de cada año escolar, en YAML. |
+| `programa_sitio/calendarios/` | El calendario escolar de cada año escolar, en JSON, y su esquema (`calendario-escolar.schema.json`). |
 | `programa_sitio/plantillas/` | Las páginas predeterminadas: portada, menú (`mkdocs.yml`), README y página genérica de proyecto. |
 | `programa_sitio/curso_base/` | Lo que recibe cada repositorio de curso: `sitio.sh`, el gancho pre-commit, la acción de GitHub y las versiones fijadas del motor. |
 | `ansible/` | La colección de Ansible `jzavalar.programa_sitio`: preparar, construir, publicar y crear un curso nuevo. |
-| `docs/` | La guía de redacción para el asistente de IA y la plantilla del programa analítico. |
+| `docs/` | La guía de redacción para el asistente de IA, la plantilla del programa analítico y el formato del calendario escolar. |
 | `pruebas/` | Pruebas automáticas, con un caso completo (Análisis de Decisiones). |
 
 ---
@@ -209,9 +209,9 @@ Ejemplos completos: el `curso.yml` de [Informática](https://github.com/jzavalar
 `curso` (con `uea`, `grupos`, `fases`, `evaluacion`, `rubrica`, `lecturas` y lo que
 agreguen `extraer`, `tablas`, `listas` y `datos`), `proyectos` y `P` (por id), `p` (en la
 página de un proyecto), `sesiones`/`S` (por número), `filas` (renglones del calendario),
-`cal` (`periodo`, `todas`, `diagnostico` y `oficial`: el trimestre del calendario escolar, con `inicio`, `fin`, `inicio_clases`, `fin_clases`, `globales`, `actas`, `recuperacion.inscripcion`, `recuperacion.evaluaciones`, `semanas`, `descansos`), `oficial` (el programa de estudios leído, si existe), `intro`, `holguras`, `n_sesiones`, `menu`,
+`cal` (`periodo`, `todas`, `diagnostico` y `oficial`: el trimestre del calendario escolar, con `inicio`, `fin`, `inicio_clases`, `fin_clases`, `globales`, `actas`, `inscripcion`, `recuperacion.inscripcion`, `recuperacion.evaluaciones`, `recuperacion.actas`, `semanas`, `descansos`; los conjuntos de días tienen `.inicio`, `.fin` y el filtro `dias`, que escribe «del 6 al 8 de enero de 2027» o «2, 3 y 6 de septiembre de 2027»), `oficial` (el programa de estudios leído, si existe), `intro`, `holguras`, `n_sesiones`, `menu`,
 `config`, `motor`. Filtros: `corta`, `larga`, `dm`, `dma`, `palabra`, `y`, `nums`,
-`punto`, `mayus`, `minuscula_inicial`, `sin_protocolo`, `yaml`, `slug`; función `rango`.
+`punto`, `mayus`, `minuscula_inicial`, `sin_protocolo`, `yaml`, `slug`, `dias`; función `rango`.
 
 ### La auditoría de duplicación
 
@@ -235,14 +235,27 @@ Si una coincidencia es legítima, se declara en la plantilla:
 
 ## Calendario escolar
 
-Un archivo por año escolar en `programa_sitio/calendarios/`, transcrito del que aprueba
-el Colegio Académico: días de descanso obligatorio y, por trimestre (`26-O`, `27-I`,
-`27-P`), inicio y fin, periodo de clases, semanas lectivas, evaluaciones globales, actas y
-evaluaciones de recuperación. Se actualiza **cada año, o cuando el calendario se
-modifique**:
+Un archivo JSON por cada calendario que aprueba el Colegio Académico en
+`programa_sitio/calendarios/`: el ordinario de cada año escolar (hoy, de 2022-2023 a
+2026-2027) y, si lo hay, el que lo modifica por causa de fuerza mayor (`modifica`). Se
+transcribe día por día, con su simbología: descansos obligatorios y, por trimestre, periodo,
+clases, semanas lectivas, inscripción/reinscripción, evaluaciones globales, actas y
+recuperación, y los periodos del año: inter-trimestrales y vacaciones. Los sucesos se escriben como **listas explícitas de días**, nunca como rangos.
+Cada archivo se valida contra su esquema y su coherencia, y todos se combinan: si dos
+calendarios vigentes no coinciden sobre un trimestre, el trimestre queda en conflicto y no se
+usa hasta que se transcriba el calendario modificado que lo resuelve.
+Todo el detalle está en [`docs/formato-calendario-escolar.md`](docs/formato-calendario-escolar.md).
 
-1. Copiar el archivo del año anterior como `AAAA-AAAA.yml` y transcribir las fechas nuevas
-   (el comentario del archivo indica de qué sesión del Colegio Académico sale).
+```bash
+programa-sitio calendario                                  # valida todos los del motor
+programa-sitio calendario 2027-2028.json --vista vista.html  # valida uno y lo dibuja con sus colores
+programa-sitio calendario --plantilla 2027-2028 programa_sitio/calendarios/2027-2028.json
+```
+
+Se actualiza **cada año, o cuando el calendario se modifique**:
+
+1. `programa-sitio calendario --plantilla AAAA-AAAA …`, llenar el esqueleto, validarlo y
+   cotejar su vista con el calendario oficial.
 2. `python3 -m pytest`, subir la versión del motor y publicar una etiqueta nueva
    (ver *Versiones*).
 3. En cada curso, cambiar la etiqueta en `requirements.txt` y `requirements.yml`, y
@@ -253,8 +266,8 @@ usar su propia copia, que tiene prioridad:
 
 ```yaml
 calendario:
-  archivo: fuente/calendario-2027-2028.yml   # misma forma que los del motor
-  trimestre: null                             # o forzar uno: 27-O
+  archivo: fuente/2027-2028.json   # mismo formato que los del motor
+  trimestre: null                  # o forzar uno: 27-O
 ```
 
 ## Versiones

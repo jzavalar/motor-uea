@@ -43,7 +43,6 @@ def clave7(c):
 def leer(texto):
     """Diccionario con los datos y apartados del programa oficial."""
     plano = re.sub(r"\*\*|__", "", texto)
-    plano_sa = L.sin_acentos(plano)
     lineas = plano.split("\n")
 
     # apartados: renglones en mayúsculas que terminan en «:»

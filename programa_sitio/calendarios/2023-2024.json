@@ -1,0 +1,583 @@
+{
+  "$schema": "./calendario-escolar.schema.json",
+  "formato": 3,
+  "documento": {
+    "nombre": "Calendario Escolar 2023-2024",
+    "anio_escolar": "2023-2024",
+    "institucion": "Universidad Autónoma Metropolitana",
+    "aprobacion": {
+      "organo": "Colegio Académico",
+      "sesion": 521,
+      "fecha": "2023-02-27"
+    },
+    "fuente": "Calendario-escolar-UAM_2023-2024.png",
+    "transcripcion": "Transcrito día por día de la imagen oficial (días, símbolos y colores) el 27 de septiembre de 2026."
+  },
+  "simbologia": {
+    "inscripcion_reinscripcion": {
+      "sigla": "IR",
+      "texto": "Inscripción/reinscripción (IR), artículo 22, RESUAM"
+    },
+    "evaluaciones_globales": {
+      "sigla": "EG",
+      "texto": "Evaluaciones globales (EG)"
+    },
+    "registro_de_calificaciones": {
+      "sigla": "EA",
+      "texto": "Entrega de actas (EA)"
+    },
+    "inscripcion_recuperacion": {
+      "sigla": "IER",
+      "texto": "Inscripción evaluaciones rec. (IER)"
+    },
+    "evaluaciones_recuperacion": {
+      "sigla": "ER",
+      "texto": "Evaluaciones de recuperación (ER)"
+    },
+    "registro_recuperacion": {
+      "sigla": "EAR",
+      "texto": "Entrega de actas recuperación (EAR)"
+    }
+  },
+  "cobertura": {
+    "inicio": "2023-09-01",
+    "fin": "2024-09-30"
+  },
+  "descansos": [
+    {
+      "fecha": "2023-09-15"
+    },
+    {
+      "fecha": "2023-09-16"
+    },
+    {
+      "fecha": "2023-10-12"
+    },
+    {
+      "fecha": "2023-11-01"
+    },
+    {
+      "fecha": "2023-11-02"
+    },
+    {
+      "fecha": "2023-11-20"
+    },
+    {
+      "fecha": "2023-12-25"
+    },
+    {
+      "fecha": "2024-01-01"
+    },
+    {
+      "fecha": "2024-02-05"
+    },
+    {
+      "fecha": "2024-03-04"
+    },
+    {
+      "fecha": "2024-03-21"
+    },
+    {
+      "fecha": "2024-03-28"
+    },
+    {
+      "fecha": "2024-03-29"
+    },
+    {
+      "fecha": "2024-05-01"
+    },
+    {
+      "fecha": "2024-05-05"
+    },
+    {
+      "fecha": "2024-05-10"
+    },
+    {
+      "fecha": "2024-05-15"
+    },
+    {
+      "fecha": "2024-09-15"
+    },
+    {
+      "fecha": "2024-09-16"
+    }
+  ],
+  "periodos_intertrimestrales": [
+    {
+      "inicio": "2023-09-11",
+      "fin": "2023-09-22"
+    },
+    {
+      "inicio": "2023-12-22",
+      "fin": "2023-12-22"
+    },
+    {
+      "inicio": "2024-01-08",
+      "fin": "2024-01-19"
+    },
+    {
+      "inicio": "2024-04-19",
+      "fin": "2024-05-03"
+    },
+    {
+      "inicio": "2024-07-26",
+      "fin": "2024-07-26"
+    },
+    {
+      "inicio": "2024-08-26",
+      "fin": "2024-09-06"
+    }
+  ],
+  "vacaciones": [
+    {
+      "inicio": "2023-09-01",
+      "fin": "2023-09-08",
+      "nota": "verano: cuatro semanas obligatorias; el documento solo muestra el final"
+    },
+    {
+      "inicio": "2023-12-26",
+      "fin": "2024-01-05",
+      "nota": "fin de año"
+    },
+    {
+      "inicio": "2024-07-29",
+      "fin": "2024-08-23",
+      "nota": "verano: cuatro semanas obligatorias"
+    }
+  ],
+  "trimestres": [
+    {
+      "clave": "23-P",
+      "nombre": "23-Primavera",
+      "parcial": true,
+      "recuperacion": {
+        "inscripcion": [
+          "2023-09-11"
+        ],
+        "evaluaciones": [
+          "2023-09-13",
+          "2023-09-14",
+          "2023-09-18"
+        ],
+        "registro_de_calificaciones": [
+          "2023-09-14",
+          "2023-09-18",
+          "2023-09-19"
+        ]
+      }
+    },
+    {
+      "clave": "23-O",
+      "nombre": "23-Otoño",
+      "periodo": {
+        "inicio": "2023-09-25",
+        "fin": "2023-12-21"
+      },
+      "clases": {
+        "inicio": "2023-09-25",
+        "fin": "2023-12-14"
+      },
+      "semanas": [
+        {
+          "orden": 1,
+          "etiqueta": "1",
+          "inicio": "2023-09-25",
+          "fin": "2023-09-29"
+        },
+        {
+          "orden": 2,
+          "etiqueta": "2",
+          "inicio": "2023-10-02",
+          "fin": "2023-10-06"
+        },
+        {
+          "orden": 3,
+          "etiqueta": "3",
+          "inicio": "2023-10-09",
+          "fin": "2023-10-13"
+        },
+        {
+          "orden": 4,
+          "etiqueta": "4",
+          "inicio": "2023-10-16",
+          "fin": "2023-10-20"
+        },
+        {
+          "orden": 5,
+          "etiqueta": "5",
+          "inicio": "2023-10-23",
+          "fin": "2023-10-27"
+        },
+        {
+          "orden": 6,
+          "etiqueta": "6",
+          "inicio": "2023-10-30",
+          "fin": "2023-11-03"
+        },
+        {
+          "orden": 7,
+          "etiqueta": "7",
+          "inicio": "2023-11-06",
+          "fin": "2023-11-10"
+        },
+        {
+          "orden": 8,
+          "etiqueta": "8",
+          "inicio": "2023-11-13",
+          "fin": "2023-11-17"
+        },
+        {
+          "orden": 9,
+          "etiqueta": "9",
+          "inicio": "2023-11-20",
+          "fin": "2023-11-24"
+        },
+        {
+          "orden": 10,
+          "etiqueta": "10",
+          "inicio": "2023-11-27",
+          "fin": "2023-12-01"
+        },
+        {
+          "orden": 11,
+          "etiqueta": "11",
+          "inicio": "2023-12-04",
+          "fin": "2023-12-08"
+        },
+        {
+          "orden": 12,
+          "etiqueta": "11 bis",
+          "inicio": "2023-12-11",
+          "fin": "2023-12-14"
+        }
+      ],
+      "inscripcion_reinscripcion": [
+        "2023-09-12",
+        "2023-09-13",
+        "2023-09-14",
+        "2023-09-18",
+        "2023-09-19",
+        "2023-09-20",
+        "2023-09-21"
+      ],
+      "evaluaciones_globales": [
+        "2023-12-15",
+        "2023-12-18",
+        "2023-12-19",
+        "2023-12-20",
+        "2023-12-21"
+      ],
+      "registro_de_calificaciones": [
+        "2023-12-15",
+        "2023-12-18",
+        "2023-12-19",
+        "2023-12-20",
+        "2023-12-21"
+      ],
+      "recuperacion": {
+        "inscripcion": [
+          "2024-01-08"
+        ],
+        "evaluaciones": [
+          "2024-01-10",
+          "2024-01-11",
+          "2024-01-12"
+        ],
+        "registro_de_calificaciones": [
+          "2024-01-11",
+          "2024-01-12",
+          "2024-01-15"
+        ]
+      }
+    },
+    {
+      "clave": "24-I",
+      "nombre": "24-Invierno",
+      "periodo": {
+        "inicio": "2024-01-22",
+        "fin": "2024-04-18"
+      },
+      "clases": {
+        "inicio": "2024-01-22",
+        "fin": "2024-04-11"
+      },
+      "semanas": [
+        {
+          "orden": 1,
+          "etiqueta": "1",
+          "inicio": "2024-01-22",
+          "fin": "2024-01-26"
+        },
+        {
+          "orden": 2,
+          "etiqueta": "2",
+          "inicio": "2024-01-29",
+          "fin": "2024-02-02"
+        },
+        {
+          "orden": 3,
+          "etiqueta": "3",
+          "inicio": "2024-02-05",
+          "fin": "2024-02-09"
+        },
+        {
+          "orden": 4,
+          "etiqueta": "4",
+          "inicio": "2024-02-12",
+          "fin": "2024-02-16"
+        },
+        {
+          "orden": 5,
+          "etiqueta": "5",
+          "inicio": "2024-02-19",
+          "fin": "2024-02-23"
+        },
+        {
+          "orden": 6,
+          "etiqueta": "6",
+          "inicio": "2024-02-26",
+          "fin": "2024-03-01"
+        },
+        {
+          "orden": 7,
+          "etiqueta": "7",
+          "inicio": "2024-03-04",
+          "fin": "2024-03-08"
+        },
+        {
+          "orden": 8,
+          "etiqueta": "8",
+          "inicio": "2024-03-11",
+          "fin": "2024-03-15"
+        },
+        {
+          "orden": 9,
+          "etiqueta": "9",
+          "inicio": "2024-03-18",
+          "fin": "2024-03-22"
+        },
+        {
+          "orden": 10,
+          "etiqueta": "10",
+          "inicio": "2024-03-25",
+          "fin": "2024-03-29"
+        },
+        {
+          "orden": 11,
+          "etiqueta": "11",
+          "inicio": "2024-04-01",
+          "fin": "2024-04-05"
+        },
+        {
+          "orden": 12,
+          "etiqueta": "11 bis",
+          "inicio": "2024-04-08",
+          "fin": "2024-04-11"
+        }
+      ],
+      "inscripcion_reinscripcion": [
+        "2024-01-09",
+        "2024-01-10",
+        "2024-01-11",
+        "2024-01-12",
+        "2024-01-15",
+        "2024-01-16",
+        "2024-01-17"
+      ],
+      "evaluaciones_globales": [
+        "2024-04-12",
+        "2024-04-15",
+        "2024-04-16",
+        "2024-04-17",
+        "2024-04-18"
+      ],
+      "registro_de_calificaciones": [
+        "2024-04-12",
+        "2024-04-15",
+        "2024-04-16",
+        "2024-04-17",
+        "2024-04-18"
+      ],
+      "recuperacion": {
+        "inscripcion": [
+          "2024-04-22"
+        ],
+        "evaluaciones": [
+          "2024-04-24",
+          "2024-04-25",
+          "2024-04-26"
+        ],
+        "registro_de_calificaciones": [
+          "2024-04-25",
+          "2024-04-26",
+          "2024-04-29"
+        ]
+      }
+    },
+    {
+      "clave": "24-P",
+      "nombre": "24-Primavera",
+      "periodo": {
+        "inicio": "2024-05-06",
+        "fin": "2024-07-25"
+      },
+      "clases": {
+        "inicio": "2024-05-06",
+        "fin": "2024-07-18"
+      },
+      "semanas": [
+        {
+          "orden": 1,
+          "etiqueta": "1",
+          "inicio": "2024-05-06",
+          "fin": "2024-05-10"
+        },
+        {
+          "orden": 2,
+          "etiqueta": "2",
+          "inicio": "2024-05-13",
+          "fin": "2024-05-17"
+        },
+        {
+          "orden": 3,
+          "etiqueta": "3",
+          "inicio": "2024-05-20",
+          "fin": "2024-05-24"
+        },
+        {
+          "orden": 4,
+          "etiqueta": "4",
+          "inicio": "2024-05-27",
+          "fin": "2024-05-31"
+        },
+        {
+          "orden": 5,
+          "etiqueta": "5",
+          "inicio": "2024-06-03",
+          "fin": "2024-06-07"
+        },
+        {
+          "orden": 6,
+          "etiqueta": "6",
+          "inicio": "2024-06-10",
+          "fin": "2024-06-14"
+        },
+        {
+          "orden": 7,
+          "etiqueta": "7",
+          "inicio": "2024-06-17",
+          "fin": "2024-06-21"
+        },
+        {
+          "orden": 8,
+          "etiqueta": "8",
+          "inicio": "2024-06-24",
+          "fin": "2024-06-28"
+        },
+        {
+          "orden": 9,
+          "etiqueta": "9",
+          "inicio": "2024-07-01",
+          "fin": "2024-07-05"
+        },
+        {
+          "orden": 10,
+          "etiqueta": "10",
+          "inicio": "2024-07-08",
+          "fin": "2024-07-12"
+        },
+        {
+          "orden": 11,
+          "etiqueta": "11",
+          "inicio": "2024-07-15",
+          "fin": "2024-07-18"
+        }
+      ],
+      "inscripcion_reinscripcion": [
+        "2024-04-23",
+        "2024-04-24",
+        "2024-04-25",
+        "2024-04-26",
+        "2024-04-29",
+        "2024-04-30",
+        "2024-05-02"
+      ],
+      "evaluaciones_globales": [
+        "2024-07-19",
+        "2024-07-22",
+        "2024-07-23",
+        "2024-07-24",
+        "2024-07-25"
+      ],
+      "registro_de_calificaciones": [
+        "2024-07-19",
+        "2024-07-22",
+        "2024-07-23",
+        "2024-07-24",
+        "2024-07-25"
+      ],
+      "recuperacion": {
+        "inscripcion": [
+          "2024-08-26"
+        ],
+        "evaluaciones": [
+          "2024-08-28",
+          "2024-08-29",
+          "2024-08-30"
+        ],
+        "registro_de_calificaciones": [
+          "2024-08-29",
+          "2024-08-30",
+          "2024-09-02"
+        ]
+      }
+    },
+    {
+      "clave": "24-O",
+      "nombre": "24-Otoño",
+      "parcial": true,
+      "tramo_visible": {
+        "inicio": "2024-09-09",
+        "fin": "2024-09-30"
+      },
+      "clases": {
+        "inicio": "2024-09-09"
+      },
+      "semanas": [
+        {
+          "orden": 1,
+          "etiqueta": "1",
+          "inicio": "2024-09-09",
+          "fin": "2024-09-13"
+        },
+        {
+          "orden": 2,
+          "etiqueta": "2",
+          "inicio": "2024-09-16",
+          "fin": "2024-09-20"
+        },
+        {
+          "orden": 3,
+          "etiqueta": "3",
+          "inicio": "2024-09-23",
+          "fin": "2024-09-27"
+        },
+        {
+          "orden": 4,
+          "etiqueta": "4",
+          "inicio": "2024-09-30",
+          "fin": "2024-09-30"
+        }
+      ],
+      "inscripcion_reinscripcion": [
+        "2024-08-27",
+        "2024-08-28",
+        "2024-08-29",
+        "2024-08-30",
+        "2024-09-02",
+        "2024-09-03",
+        "2024-09-04"
+      ]
+    }
+  ]
+}

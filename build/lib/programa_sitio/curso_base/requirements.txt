@@ -1,3 +1,0 @@
-# Motor que convierte el programa analítico en el sitio. Cambie la versión aquí y en
-# requirements.yml al mismo tiempo.
-programa-sitio @ git+{MOTOR_REPOSITORIO}.git@v{MOTOR_VERSION}

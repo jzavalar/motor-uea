@@ -179,5 +179,8 @@ FILTROS = {
     # cadena YAML entre comillas, legible (sin escapar acentos)
     "yaml": lambda s: json.dumps(str(s), ensure_ascii=False),
     "slug": slug,
+    # conjunto de días del calendario escolar: «del 6 al 8 de enero de 2027»,
+    # «2, 3 y 6 de septiembre de 2027»
+    "dias": lambda d: d.texto() if hasattr(d, "texto") else str(d),
 }
 GLOBALES = {"rango": f_rango}

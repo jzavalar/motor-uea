@@ -1,0 +1,560 @@
+{
+  "$schema": "./calendario-escolar.schema.json",
+  "formato": 3,
+  "documento": {
+    "nombre": "Calendario Escolar 2026-2027",
+    "anio_escolar": "2026-2027",
+    "institucion": "Universidad Autónoma Metropolitana",
+    "aprobacion": {
+      "organo": "Colegio Académico",
+      "sesion": 576,
+      "fecha": "2026-02-26"
+    },
+    "fuente": "Calendario-escolar-UAM_2026-2027.png",
+    "transcripcion": "Transcrito día por día de la imagen oficial (días, símbolos y colores) el 27 de septiembre de 2026. El registro de calificaciones posterior al trimestre aparece en verde, color que no está en la simbología del documento."
+  },
+  "simbologia": {
+    "inscripcion_reinscripcion": {
+      "sigla": "IR",
+      "texto": "Inscripción/reinscripción (IR), artículo 27, RESUAM"
+    },
+    "evaluaciones_globales": {
+      "sigla": "EG",
+      "texto": "Evaluaciones globales (EG)"
+    },
+    "registro_de_calificaciones": {
+      "sigla": "RCA",
+      "texto": "Registro de calificaciones en actas (RCA)"
+    },
+    "inscripcion_recuperacion": {
+      "sigla": "IER",
+      "texto": "Inscripción evaluaciones de recuperación (IER)"
+    },
+    "evaluaciones_recuperacion": {
+      "sigla": "ER",
+      "texto": "Evaluaciones de recuperación (ER)"
+    },
+    "registro_recuperacion": {
+      "sigla": "RCR",
+      "texto": "Registro de calificaciones en actas de recuperación (RCR)"
+    }
+  },
+  "cobertura": {
+    "inicio": "2026-09-01",
+    "fin": "2027-09-30"
+  },
+  "descansos": [
+    {
+      "fecha": "2026-09-15"
+    },
+    {
+      "fecha": "2026-09-16"
+    },
+    {
+      "fecha": "2026-10-12"
+    },
+    {
+      "fecha": "2026-11-01"
+    },
+    {
+      "fecha": "2026-11-02"
+    },
+    {
+      "fecha": "2026-11-20"
+    },
+    {
+      "fecha": "2026-12-25"
+    },
+    {
+      "fecha": "2027-01-01"
+    },
+    {
+      "fecha": "2027-02-05"
+    },
+    {
+      "fecha": "2027-03-04"
+    },
+    {
+      "fecha": "2027-03-21"
+    },
+    {
+      "fecha": "2027-03-25"
+    },
+    {
+      "fecha": "2027-03-26"
+    },
+    {
+      "fecha": "2027-03-27"
+    },
+    {
+      "fecha": "2027-05-01"
+    },
+    {
+      "fecha": "2027-05-05"
+    },
+    {
+      "fecha": "2027-05-10"
+    },
+    {
+      "fecha": "2027-05-15"
+    },
+    {
+      "fecha": "2027-09-15"
+    },
+    {
+      "fecha": "2027-09-16"
+    }
+  ],
+  "periodos_intertrimestrales": [
+    {
+      "inicio": "2026-09-01",
+      "fin": "2026-09-14"
+    },
+    {
+      "inicio": "2027-01-04",
+      "fin": "2027-01-15"
+    },
+    {
+      "inicio": "2027-04-19",
+      "fin": "2027-04-30"
+    },
+    {
+      "inicio": "2027-08-30",
+      "fin": "2027-09-17"
+    }
+  ],
+  "vacaciones": [
+    {
+      "inicio": "2026-12-21",
+      "fin": "2026-12-31",
+      "nota": "fin de año"
+    },
+    {
+      "inicio": "2027-08-02",
+      "fin": "2027-08-27",
+      "nota": "verano: cuatro semanas obligatorias"
+    }
+  ],
+  "trimestres": [
+    {
+      "clave": "26-P",
+      "nombre": "26-Primavera",
+      "parcial": true,
+      "recuperacion": {
+        "evaluaciones": [
+          "2026-09-02",
+          "2026-09-03",
+          "2026-09-04"
+        ],
+        "registro_de_calificaciones": [
+          "2026-09-03",
+          "2026-09-04",
+          "2026-09-07"
+        ]
+      }
+    },
+    {
+      "clave": "26-O",
+      "nombre": "26-Otoño",
+      "periodo": {
+        "inicio": "2026-09-17",
+        "fin": "2026-12-11"
+      },
+      "clases": {
+        "inicio": "2026-09-17",
+        "fin": "2026-12-04"
+      },
+      "semanas": [
+        {
+          "orden": 1,
+          "etiqueta": "1",
+          "inicio": "2026-09-17",
+          "fin": "2026-09-18"
+        },
+        {
+          "orden": 2,
+          "etiqueta": "2",
+          "inicio": "2026-09-21",
+          "fin": "2026-09-25"
+        },
+        {
+          "orden": 3,
+          "etiqueta": "3",
+          "inicio": "2026-09-28",
+          "fin": "2026-10-02"
+        },
+        {
+          "orden": 4,
+          "etiqueta": "4",
+          "inicio": "2026-10-05",
+          "fin": "2026-10-09"
+        },
+        {
+          "orden": 5,
+          "etiqueta": "5",
+          "inicio": "2026-10-12",
+          "fin": "2026-10-16"
+        },
+        {
+          "orden": 6,
+          "etiqueta": "6",
+          "inicio": "2026-10-19",
+          "fin": "2026-10-23"
+        },
+        {
+          "orden": 7,
+          "etiqueta": "7",
+          "inicio": "2026-10-26",
+          "fin": "2026-10-30"
+        },
+        {
+          "orden": 8,
+          "etiqueta": "8",
+          "inicio": "2026-11-02",
+          "fin": "2026-11-06"
+        },
+        {
+          "orden": 9,
+          "etiqueta": "9",
+          "inicio": "2026-11-09",
+          "fin": "2026-11-13"
+        },
+        {
+          "orden": 10,
+          "etiqueta": "10",
+          "inicio": "2026-11-16",
+          "fin": "2026-11-20"
+        },
+        {
+          "orden": 11,
+          "etiqueta": "11",
+          "inicio": "2026-11-23",
+          "fin": "2026-11-27"
+        },
+        {
+          "orden": 12,
+          "etiqueta": "11 bis",
+          "inicio": "2026-11-30",
+          "fin": "2026-12-04"
+        }
+      ],
+      "inscripcion_reinscripcion": [
+        "2026-09-01",
+        "2026-09-02",
+        "2026-09-03",
+        "2026-09-04",
+        "2026-09-07",
+        "2026-09-08",
+        "2026-09-09"
+      ],
+      "evaluaciones_globales": [
+        "2026-12-07",
+        "2026-12-08",
+        "2026-12-09",
+        "2026-12-10",
+        "2026-12-11"
+      ],
+      "registro_de_calificaciones": [
+        "2026-12-14",
+        "2026-12-15",
+        "2026-12-16",
+        "2026-12-17",
+        "2026-12-18"
+      ],
+      "recuperacion": {
+        "inscripcion": [
+          "2027-01-04"
+        ],
+        "evaluaciones": [
+          "2027-01-06",
+          "2027-01-07",
+          "2027-01-08"
+        ],
+        "registro_de_calificaciones": [
+          "2027-01-07",
+          "2027-01-08",
+          "2027-01-11"
+        ]
+      }
+    },
+    {
+      "clave": "27-I",
+      "nombre": "27-Invierno",
+      "periodo": {
+        "inicio": "2027-01-18",
+        "fin": "2027-04-14"
+      },
+      "clases": {
+        "inicio": "2027-01-18",
+        "fin": "2027-04-07"
+      },
+      "semanas": [
+        {
+          "orden": 1,
+          "etiqueta": "1",
+          "inicio": "2027-01-18",
+          "fin": "2027-01-22"
+        },
+        {
+          "orden": 2,
+          "etiqueta": "2",
+          "inicio": "2027-01-25",
+          "fin": "2027-01-29"
+        },
+        {
+          "orden": 3,
+          "etiqueta": "3",
+          "inicio": "2027-02-01",
+          "fin": "2027-02-05"
+        },
+        {
+          "orden": 4,
+          "etiqueta": "4",
+          "inicio": "2027-02-08",
+          "fin": "2027-02-12"
+        },
+        {
+          "orden": 5,
+          "etiqueta": "5",
+          "inicio": "2027-02-15",
+          "fin": "2027-02-19"
+        },
+        {
+          "orden": 6,
+          "etiqueta": "6",
+          "inicio": "2027-02-22",
+          "fin": "2027-02-26"
+        },
+        {
+          "orden": 7,
+          "etiqueta": "7",
+          "inicio": "2027-03-01",
+          "fin": "2027-03-05"
+        },
+        {
+          "orden": 8,
+          "etiqueta": "8",
+          "inicio": "2027-03-08",
+          "fin": "2027-03-12"
+        },
+        {
+          "orden": 9,
+          "etiqueta": "9",
+          "inicio": "2027-03-15",
+          "fin": "2027-03-19"
+        },
+        {
+          "orden": 10,
+          "etiqueta": "10",
+          "inicio": "2027-03-22",
+          "fin": "2027-03-26"
+        },
+        {
+          "orden": 11,
+          "etiqueta": "11",
+          "inicio": "2027-03-29",
+          "fin": "2027-04-02"
+        },
+        {
+          "orden": 12,
+          "etiqueta": "11 bis",
+          "inicio": "2027-04-05",
+          "fin": "2027-04-07"
+        }
+      ],
+      "inscripcion_reinscripcion": [
+        "2027-01-05",
+        "2027-01-06",
+        "2027-01-07",
+        "2027-01-08",
+        "2027-01-11",
+        "2027-01-12",
+        "2027-01-13"
+      ],
+      "evaluaciones_globales": [
+        "2027-04-08",
+        "2027-04-09",
+        "2027-04-12",
+        "2027-04-13",
+        "2027-04-14"
+      ],
+      "registro_de_calificaciones": [
+        "2027-04-12",
+        "2027-04-13",
+        "2027-04-14",
+        "2027-04-15",
+        "2027-04-16"
+      ],
+      "recuperacion": {
+        "inscripcion": [
+          "2027-04-19"
+        ],
+        "evaluaciones": [
+          "2027-04-21",
+          "2027-04-22",
+          "2027-04-23"
+        ],
+        "registro_de_calificaciones": [
+          "2027-04-22",
+          "2027-04-23",
+          "2027-04-26"
+        ]
+      }
+    },
+    {
+      "clave": "27-P",
+      "nombre": "27-Primavera",
+      "periodo": {
+        "inicio": "2027-05-03",
+        "fin": "2027-07-23"
+      },
+      "clases": {
+        "inicio": "2027-05-03",
+        "fin": "2027-07-16"
+      },
+      "semanas": [
+        {
+          "orden": 1,
+          "etiqueta": "1",
+          "inicio": "2027-05-03",
+          "fin": "2027-05-07"
+        },
+        {
+          "orden": 2,
+          "etiqueta": "2",
+          "inicio": "2027-05-10",
+          "fin": "2027-05-14"
+        },
+        {
+          "orden": 3,
+          "etiqueta": "3",
+          "inicio": "2027-05-17",
+          "fin": "2027-05-21"
+        },
+        {
+          "orden": 4,
+          "etiqueta": "4",
+          "inicio": "2027-05-24",
+          "fin": "2027-05-28"
+        },
+        {
+          "orden": 5,
+          "etiqueta": "5",
+          "inicio": "2027-05-31",
+          "fin": "2027-06-04"
+        },
+        {
+          "orden": 6,
+          "etiqueta": "6",
+          "inicio": "2027-06-07",
+          "fin": "2027-06-11"
+        },
+        {
+          "orden": 7,
+          "etiqueta": "7",
+          "inicio": "2027-06-14",
+          "fin": "2027-06-18"
+        },
+        {
+          "orden": 8,
+          "etiqueta": "8",
+          "inicio": "2027-06-21",
+          "fin": "2027-06-25"
+        },
+        {
+          "orden": 9,
+          "etiqueta": "9",
+          "inicio": "2027-06-28",
+          "fin": "2027-07-02"
+        },
+        {
+          "orden": 10,
+          "etiqueta": "10",
+          "inicio": "2027-07-05",
+          "fin": "2027-07-09"
+        },
+        {
+          "orden": 11,
+          "etiqueta": "11",
+          "inicio": "2027-07-12",
+          "fin": "2027-07-16"
+        }
+      ],
+      "inscripcion_reinscripcion": [
+        "2027-04-20",
+        "2027-04-21",
+        "2027-04-22",
+        "2027-04-23",
+        "2027-04-26",
+        "2027-04-27",
+        "2027-04-28"
+      ],
+      "evaluaciones_globales": [
+        "2027-07-19",
+        "2027-07-20",
+        "2027-07-21",
+        "2027-07-22",
+        "2027-07-23"
+      ],
+      "registro_de_calificaciones": [
+        "2027-07-26",
+        "2027-07-27",
+        "2027-07-28",
+        "2027-07-29",
+        "2027-07-30"
+      ],
+      "recuperacion": {
+        "inscripcion": [
+          "2027-08-30"
+        ],
+        "evaluaciones": [
+          "2027-09-02",
+          "2027-09-03",
+          "2027-09-06"
+        ],
+        "registro_de_calificaciones": [
+          "2027-09-07",
+          "2027-09-08",
+          "2027-09-09"
+        ]
+      }
+    },
+    {
+      "clave": "27-O",
+      "nombre": "27-Otoño",
+      "parcial": true,
+      "tramo_visible": {
+        "inicio": "2027-09-20",
+        "fin": "2027-09-30"
+      },
+      "clases": {
+        "inicio": "2027-09-20"
+      },
+      "semanas": [
+        {
+          "orden": 1,
+          "etiqueta": "1",
+          "inicio": "2027-09-20",
+          "fin": "2027-09-24"
+        },
+        {
+          "orden": 2,
+          "etiqueta": "2",
+          "inicio": "2027-09-27",
+          "fin": "2027-09-30"
+        }
+      ],
+      "inscripcion_reinscripcion": [
+        "2027-08-31",
+        "2027-09-01",
+        "2027-09-02",
+        "2027-09-03",
+        "2027-09-06",
+        "2027-09-07",
+        "2027-09-08",
+        "2027-09-09",
+        "2027-09-10"
+      ]
+    }
+  ]
+}

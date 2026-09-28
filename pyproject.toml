@@ -15,6 +15,7 @@ dependencies = [
   "mkdocs-material>=9.5,<10",
   "Jinja2>=3.1",
   "PyYAML>=6",
+  "jsonschema>=4.18",
 ]
 
 [project.optional-dependencies]
@@ -30,7 +31,7 @@ programa-sitio = "programa_sitio.mkdocs_plugin:ProgramaSitio"
 packages = ["programa_sitio"]
 
 [tool.setuptools.package-data]
-programa_sitio = ["predeterminado.yml", "calendarios/*.yml", "plantillas/*.j2", "curso_base/**/*", "curso_base/*", "curso_base/.*", "curso_base/.*/*", "curso_base/.*/*/*"]
+programa_sitio = ["predeterminado.yml", "calendarios/*.json", "plantillas/*.j2", "curso_base/**/*", "curso_base/*", "curso_base/.*", "curso_base/.*/*", "curso_base/.*/*/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["pruebas"]

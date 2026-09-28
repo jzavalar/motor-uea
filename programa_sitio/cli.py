@@ -3,6 +3,7 @@
     programa-sitio construir [--curso DIR] [--verificar] [--auditar] [--porcelana]
     programa-sitio revisar [--curso DIR] [--salida revision.md]
     programa-sitio nuevo DIR --fuente programa.md --sitio URL --repositorio URL
+    programa-sitio calendario [ARCHIVO.json …] [--vista vista.md] [--plantilla AAAA-AAAA]
     programa-sitio version
 
 construir   valida la fuente, regenera lo que cambió y borra las páginas huérfanas.
@@ -14,6 +15,11 @@ revisar     informe en Markdown del programa analítico contra el calendario esc
             el programa oficial y la estructura común, para corregirlo (por ejemplo,
             con un asistente de IA). No escribe nada del sitio.
 nuevo       arma el repositorio de una UEA nueva a partir de su programa analítico.
+calendario  valida archivos de calendario escolar (sin argumentos: los del motor) contra
+            su esquema y su coherencia, y los coteja entre sí.
+            --vista      escribe el calendario mes por mes con la simbología oficial, para
+                         cotejarlo con el documento original (.html: con sus colores)
+            --plantilla  escribe el esqueleto del calendario de un año escolar nuevo
 """
 
 import argparse
@@ -112,6 +118,44 @@ def orden_nuevo(a):
     return 0
 
 
+def orden_calendario(a):
+    from . import calendario_escolar as CE
+    if a.plantilla:
+        destino = a.archivos[0] if a.archivos else f"{a.plantilla}.json"
+        if os.path.exists(destino):
+            print(f"{destino} ya existe; no lo sobrescribo.", file=sys.stderr)
+            return 2
+        with open(destino, "w", encoding="utf-8") as f:
+            f.write(CE.plantilla(a.plantilla))
+        print(f"Esqueleto escrito en {destino}. Sustituya cada AAAA-MM-DD y valídelo con: "
+              f"programa-sitio calendario {destino} --vista vista.md")
+        return 0
+    lista = a.archivos or CE.del_motor()
+    completos, parciales, errores, avisos = CE.cargar_todos(lista)
+    for e in errores:
+        print("ERROR  ", e, file=sys.stderr)
+    for x in avisos:
+        print("aviso  ", x)
+    if a.vista:
+        if len(lista) != 1:
+            print("--vista es para un solo archivo.", file=sys.stderr)
+            return 2
+        try:
+            cal = CE.leer(lista[0])
+        except CE.ErrorDeCalendario:
+            print("No escribo la vista: el archivo tiene errores.", file=sys.stderr)
+            return 1
+        with open(a.vista, "w", encoding="utf-8") as f:
+            f.write(CE.vista_html(cal) if a.vista.endswith(".html") else CE.vista(cal))
+        print(f"Vista escrita en {a.vista}.")
+    if errores:
+        print(f"\n{len(errores)} error(es).", file=sys.stderr)
+        return 1
+    print(f"Calendario(s) válido(s): {', '.join(os.path.basename(x) for x in lista)}. "
+          f"Trimestres completos: {', '.join(completos) or 'ninguno'}.")
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="programa-sitio", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -133,6 +177,10 @@ def main(argv=None):
     rv.add_argument("--salida", default="revision.md", help="archivo del informe («-»: pantalla)")
     en = sub.add_parser("entradas", help="lista las rutas de las que depende el sitio")
     en.add_argument("--curso", default=".")
+    ca = sub.add_parser("calendario", help="valida o dibuja un calendario escolar")
+    ca.add_argument("archivos", nargs="*")
+    ca.add_argument("--vista", help="archivo Markdown con el calendario mes por mes")
+    ca.add_argument("--plantilla", metavar="AAAA-AAAA", help="esqueleto de un año escolar nuevo")
     sub.add_parser("version")
     a = ap.parse_args(argv)
     if a.orden == "entradas":
@@ -143,6 +191,8 @@ def main(argv=None):
         return orden_construir(a)
     if a.orden == "nuevo":
         return orden_nuevo(a)
+    if a.orden == "calendario":
+        return orden_calendario(a)
     if a.orden == "version":
         print(__version__)
         return 0

@@ -5,9 +5,11 @@ asistente junto con el programa analítico, el asistente corrige, y se repite ha
 el informe diga que el programa está listo. No escribe nada del sitio."""
 
 import datetime as dt
+import os
 
 from . import __version__
 from . import calendario as K
+from . import calendario_escolar as CE
 from . import lexico as L
 from .nucleo import examinar
 
@@ -59,12 +61,10 @@ def informe(raiz):
         archivo_of = (cfg.get("programa_oficial") or {}).get("archivo")
         L_.append(f"- **Programa de estudios oficial**: `{archivo_of}`" + ("" if of else
                   " — no se encontró o no se pudo leer; no se contrastó"))
-        clave = (cfg.get("calendario") or {}).get("trimestre") or \
-            K.clave_trimestre(uea.get("trimestre"))
-        T = K.cargar(cfg).get(clave) if clave else None
+        clave, T, _ = K.trimestre(cfg, uea)
         if T:
-            L_.append(f"- **Calendario escolar**: {T['_calendario']}, trimestre {clave} "
-                      f"({T.get('nombre', clave)})")
+            L_.append(f"- **Calendario escolar**: {T['_calendario']} "
+                      f"(`{os.path.basename(T['_archivo'])}`), trimestre {clave} ({T['nombre']})")
         else:
             L_.append(f"- **Calendario escolar**: no hay datos del trimestre {clave or '¿?'}")
     L_.append("")
@@ -105,25 +105,24 @@ def informe(raiz):
         L_ += [f"- {a}" for a in de_sitio] + ["", "</details>", ""]
     # referencia de fechas
     if cfg:
-        clave = (cfg.get("calendario") or {}).get("trimestre") or \
-            K.clave_trimestre(uea.get("trimestre"))
-        T = K.cargar(cfg).get(clave) if clave else None
+        clave, T, _ = K.trimestre(cfg, uea)
         if T:
-            d = lambda x: L.f_dma(x)  # noqa: E731
-            desc = [x for x in T["_descansos"] if T["trimestre"][0] <= x <= T["trimestre"][1]]
+            p, (ci, cf), rec = T["periodo"], T["clases"], T["recuperacion"]
+            desc = [x for x in T["_descansos"] if p[0] <= x <= p[1]]
             L_ += [f"## Fechas oficiales del trimestre {clave}", "",
-                   "| Concepto | Fecha |", "|---|---|",
-                   f"| Trimestre | {d(T['trimestre'][0])} al {d(T['trimestre'][1])} |",
-                   f"| Clases | del {L.f_larga(T['clases'][0])} al {L.f_larga(T['clases'][1])} "
-                   f"de {T['clases'][1].year} |",
-                   f"| Semanas lectivas | {len(T.get('semanas') or {})} "
-                   f"({', '.join((T.get('semanas') or {}).keys())}) |",
-                   "| Descansos obligatorios | " + (", ".join(L.f_larga(x) for x in desc)
-                                                   or "ninguno") + " |",
-                   f"| Evaluaciones globales | {d(T['globales'][0])} al {d(T['globales'][1])} |"]
-            rec = T.get("recuperacion") or {}
-            if rec.get("evaluaciones"):
-                L_.append(f"| Evaluaciones de recuperación | {d(rec['evaluaciones'][0])} al "
-                          f"{d(rec['evaluaciones'][1])} |")
-            L_ += ["", f"*{T['_calendario']}. {T.get('_aprobacion', '')}*", ""]
+                   "| Concepto | Fechas |", "|---|---|",
+                   f"| Trimestre | {CE.rango(*p)} |",
+                   f"| Clases | {CE.rango_largo(ci, cf)} |",
+                   f"| Semanas lectivas | {len(T['semanas'])}: " +
+                   "; ".join(f"{s['etiqueta']}: {CE.rango_semana(s)}" for s in T["semanas"])
+                   + " |",
+                   "| Descansos obligatorios | " +
+                   (", ".join(L.f_larga(x) for x in desc) or "ninguno") + " |",
+                   ] + (["| Vacaciones dentro del trimestre (sin clases) | " +
+                         "; ".join(CE.rango(a, b) for a, b, _ in T["vacaciones"]) + " |"]
+                        if T["vacaciones"] else []) + [
+                   f"| Evaluaciones globales | {T['globales'].texto()} |",
+                   f"| Inscripción a recuperación | {rec['inscripcion'].texto()} |",
+                   f"| Evaluaciones de recuperación | {rec['evaluaciones'].texto()} |",
+                   "", f"*{T['_calendario']}. {T['_texto_aprobacion']}.*", ""]
     return "\n".join(L_).rstrip() + "\n", listo

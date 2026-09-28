@@ -1,10 +1,11 @@
 """Contraste del programa analítico con el calendario escolar vigente.
 
 El calendario escolar lo aprueba el Colegio Académico para todo un año escolar y es el
-mismo para todas las UEA: vive en el motor, un archivo por año escolar
-(programa_sitio/calendarios/AAAA-AAAA.yml). Un curso puede usar su propia copia
-(`calendario: {archivo: …}` en curso.yml) si el calendario cambia antes de que haya una
-versión nueva del motor.
+mismo para todas las UEA: vive en el motor, un archivo JSON por año escolar
+(programa_sitio/calendarios/AAAA-AAAA.json), con la forma de
+calendario-escolar.schema.json; su lectura y validación están en calendario_escolar.py.
+Un curso puede usar su propia copia (`calendario: {archivo: …}` en curso.yml) si el
+calendario cambia antes de que haya una versión nueva del motor.
 
 Lo que se comprueba —todo lo que el programa analítico dice sobre fechas debe caber en
 el calendario—:
@@ -18,12 +19,10 @@ el calendario—:
 """
 
 import datetime as dt
-import glob
 import os
 import re
 
-import yaml
-
+from . import calendario_escolar as CE
 from . import lexico as L
 
 CARPETA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "calendarios")
@@ -40,45 +39,66 @@ def clave_trimestre(texto):
     return f"{m.group(1)}-{letra}"
 
 
-def cargar(cfg):
-    """{trimestre: datos}, más el nombre del calendario del que salió cada uno."""
-    archivos = sorted(glob.glob(os.path.join(CARPETA, "*.yml")))
+def archivos(cfg):
+    """Los calendarios del motor y, al final (para que tenga prioridad), el del curso."""
+    lista = CE.del_motor()
     propio = (cfg.get("calendario") or {}).get("archivo")
     if propio:
-        archivos.append(os.path.join(cfg["_raiz"], propio))
-    trimestres = {}
-    for a in archivos:
-        with open(a, encoding="utf-8") as f:
-            d = yaml.safe_load(f) or {}
-        for k, t in (d.get("trimestres") or {}).items():
-            t = dict(t)
-            t["_calendario"] = d.get("calendario", os.path.basename(a))
-            t["_aprobacion"] = d.get("aprobacion", "")
-            t["_descansos"] = list(d.get("descansos") or [])
-            trimestres[str(k)] = t
-    return trimestres
+        lista.append(os.path.join(cfg["_raiz"], propio))
+    return lista
+
+
+def cargar(cfg):
+    """(trimestres completos, trimestres solo parciales, errores, avisos)."""
+    propio = (cfg.get("calendario") or {}).get("archivo")
+    return CE.cargar_todos(archivos(cfg),
+                           os.path.join(cfg["_raiz"], propio) if propio else None)
+
+
+def trimestre(cfg, uea):
+    """(clave, datos del trimestre o None, errores)."""
+    pedido = (cfg.get("calendario") or {}).get("trimestre")
+    clave = pedido or clave_trimestre(uea.get("trimestre"))
+    if not clave:
+        return None, None, ["calendario escolar: no sé qué trimestre es «"
+                            + str(uea.get("trimestre"))
+                            + "»; escriba en el encabezado «Trimestre 26-Otoño · …»"]
+    completos, parciales, errores, _ = cargar(cfg)
+    errores = [f"calendario escolar: {e}" for e in errores]
+    T = completos.get(clave)
+    if T is None:
+        if clave in parciales:
+            errores.append(f"calendario escolar: el {parciales[clave]['_calendario']} solo "
+                           f"muestra algunos días del trimestre {clave}; hace falta el "
+                           "calendario escolar del año al que pertenece: agréguelo al motor "
+                           "o indique calendario.archivo en curso.yml")
+        else:
+            errores.append(f"calendario escolar: el motor no tiene el trimestre {clave} "
+                           f"(tiene {', '.join(sorted(completos)) or 'ninguno'}). Hace falta "
+                           "el calendario escolar de ese año: agréguelo al motor o indique "
+                           "calendario.archivo en curso.yml")
+    if T is not None and T["conflictos"]:
+        detalle = "; ".join(f"{c['campo']}: " + " / ".join(f"{q} dice {v}" for q, v in c["valores"])
+                            for c in T["conflictos"])
+        errores.append(f"calendario escolar: los calendarios vigentes no coinciden sobre el "
+                       f"trimestre {clave} ({detalle}). Si el Colegio Académico aprobó un "
+                       "calendario modificado, transcríbalo con «modifica»; mientras tanto, "
+                       "no hay fechas oficiales confiables para este trimestre")
+        T = None
+    return clave, T, errores
 
 
 def contrastar(ctx, cfg):
     """(errores, avisos, datos del trimestre o None)."""
-    errores, avisos = [], []
+    avisos = []
     uea = ctx["curso"]["uea"]
-    pedido = (cfg.get("calendario") or {}).get("trimestre")
-    clave = pedido or clave_trimestre(uea.get("trimestre"))
-    if not clave:
-        return (["calendario escolar: no sé qué trimestre es «" + str(uea.get("trimestre"))
-                 + "»; escriba en el encabezado «Trimestre 26-Otoño · …»"], [], None)
-    trimestres = cargar(cfg)
-    T = trimestres.get(clave)
-    if T is None:
-        return ([f"calendario escolar: el motor no tiene el trimestre {clave} (tiene "
-                 f"{', '.join(sorted(trimestres)) or 'ninguno'}). Hace falta el calendario "
-                 "escolar de ese año: agréguelo al motor o indique calendario.archivo en "
-                 "curso.yml"], [], None)
+    clave, T, errores = trimestre(cfg, uea)
+    if errores or T is None:
+        return errores, [], None
     nombre = T["_calendario"]
-    t_ini, t_fin = T["trimestre"]
+    t_ini, t_fin = T["periodo"]
     c_ini, c_fin = T["clases"]
-    g_ini, g_fin = T["globales"]
+    g_ini, g_fin = T["globales"].inicio, T["globales"].fin
     descansos = set(T["_descansos"])
     per = ctx.get("_periodo") or ctx["cal"]["periodo"]
 
@@ -113,6 +133,9 @@ def contrastar(ctx, cfg):
         if d in descansos:
             errores.append(f"§7: la sesión {n} cae el {fecha(d)}, que es día de descanso "
                            f"obligatorio en el {nombre}")
+        elif CE.en_receso(T, d):
+            errores.append(f"§7: la sesión {n} cae el {fecha(d)}, que está en vacaciones "
+                           f"según el {nombre} (sin clases)")
 
     # descansos que tocan días de clase del grupo
     dias = set(per.get("dias") or {S[n]["fecha"].weekday() for n in S if S[n].get("fecha")})
@@ -134,17 +157,20 @@ def contrastar(ctx, cfg):
     d = c_ini
     libres = []
     while d <= c_fin:
-        if d.weekday() in dias and d not in descansos and d not in usados:
+        if d.weekday() in dias and d not in descansos and d not in usados \
+                and not CE.en_receso(T, d):
             libres.append(d)
         d += dt.timedelta(days=1)
     if libres and dias:
         avisos.append("calendario escolar: estos días de clase del grupo no tienen sesión: "
                       + ", ".join(L.f_larga(x) for x in libres))
     oficial = {
-        "calendario": nombre, "aprobacion": T["_aprobacion"], "trimestre": clave,
-        "nombre": T.get("nombre", clave), "inicio": t_ini, "fin": t_fin,
-        "inicio_clases": c_ini, "fin_clases": c_fin, "globales": [g_ini, g_fin],
-        "actas": T.get("actas"), "recuperacion": T.get("recuperacion") or {},
-        "semanas": T.get("semanas") or {}, "descansos": sorted(descansos),
+        "calendario": nombre, "aprobacion": T["_texto_aprobacion"], "trimestre": clave,
+        "nombre": T["nombre"], "inicio": t_ini, "fin": t_fin,
+        "inicio_clases": c_ini, "fin_clases": c_fin, "globales": T["globales"],
+        "actas": T["actas"], "inscripcion": T["inscripcion"],
+        "recuperacion": T["recuperacion"], "semanas": T["semanas"],
+        "vacaciones": [(a, b) for a, b, _ in T["vacaciones"]],
+        "descansos": sorted(descansos),
     }
     return errores, avisos, oficial

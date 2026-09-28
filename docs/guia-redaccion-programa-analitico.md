@@ -9,7 +9,7 @@ Entrégala al asistente al empezar, junto con los insumos.
 | Insumo | Qué fija | De dónde sale |
 |---|---|---|
 | **Programa de estudios oficial** de la UEA (`docs/curso/programa-oficial.md`) | Nombre, clave, créditos, horas, carácter, trimestre del plan, seriación, objetivos, contenido sintético, modalidades de conducción y de evaluación, bibliografía. **No se modifica.** | El PDF de la UAM, convertido una sola vez a Markdown. |
-| **Calendario escolar** vigente | Inicio y fin del trimestre, periodo de clases, las semanas lectivas (11 + 11 bis), días de descanso obligatorio, evaluaciones globales, evaluaciones de recuperación. **No se modifica.** | El calendario que aprueba el Colegio Académico; el motor lo trae ya transcrito (`programa_sitio/calendarios/AAAA-AAAA.yml`). |
+| **Calendario escolar** vigente | Inicio y fin del trimestre, periodo de clases, las semanas lectivas (11 más la 11 bis en Otoño e Invierno; 11 en Primavera 27-P), días de descanso obligatorio, evaluaciones globales, evaluaciones de recuperación. **No se modifica.** | El calendario que aprueba el Colegio Académico; el motor lo trae ya transcrito (`programa_sitio/calendarios/AAAA-AAAA.json`). La tabla de fechas oficiales de `revision.md` lo resume. |
 | **Programa analítico** (`docs/curso/programa-analitico.md`) | Todo lo demás: la propuesta del profesor para ese trimestre. | Se redacta con el asistente, a partir de los otros dos. |
 
 El programa analítico **desarrolla** el oficial dentro del calendario: no cambia sus

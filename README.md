@@ -88,7 +88,7 @@ Con el programa analítico en Markdown a la mano:
 ```bash
 sudo dnf install ansible-core gh && gh auth login        # una vez
 ansible-galaxy collection install \
-    "git+https://github.com/jzavalar/programa-sitio.git#/ansible/,v1.0.0"
+    "git+https://github.com/jzavalar/motor-uea.git#/ansible/,v1.0.0"
 ansible-playbook jzavalar.programa_sitio.nuevo \
     -e destino=~/cursos/mi-uea \
     -e fuente=~/Documentos/programa-analitico.md \

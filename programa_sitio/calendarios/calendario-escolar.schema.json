@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/jzavalar/programa-sitio/main/programa_sitio/calendarios/calendario-escolar.schema.json",
+  "$id": "https://raw.githubusercontent.com/jzavalar/motor-uea/main/programa_sitio/calendarios/calendario-escolar.schema.json",
   "title": "Calendario escolar de la UAM (un documento aprobado)",
   "description": "Transcripción, sin interpretación, de UN calendario escolar aprobado por el Colegio Académico (el ordinario de un año escolar, o uno que lo modifica por causa de fuerza mayor). Reglas: (1) toda fecha es AAAA-MM-DD; (2) un periodo {inicio, fin} abarca todos los días naturales entre ambos, inclusive; su inicio y su fin son días hábiles del color que representa (no días de descanso); (3) un conjunto de días (inscripciones, evaluaciones, actas) es la lista explícita de los días marcados, en orden ascendente y sin repetir, nunca un rango; (4) dentro de 'cobertura', cada día hábil que no es de descanso pertenece a exactamente uno de: un trimestre (azul), un periodo intertrimestral (amarillo), unas vacaciones (blanco) o el registro de calificaciones posterior a un trimestre; (5) se transcribe solo lo que el documento muestra. Los trimestres se nombran por año natural en el orden Invierno (AA-I), Primavera (AA-P), Otoño (AA-O). La coherencia la comprueba: programa-sitio calendario ARCHIVO.json.",
   "type": "object",

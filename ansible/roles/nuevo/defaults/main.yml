@@ -11,7 +11,7 @@ cuenta_github: ""
 unidad_corta: UAM-Iztapalapa
 # true: crea el repositorio público en GitHub, sube el primer commit y activa Pages
 crear_en_github: false
-motor_repositorio: https://github.com/jzavalar/programa-sitio
+motor_repositorio: https://github.com/jzavalar/motor-uea
 motor_version: "1.0.0"
 # Para probar el motor desde una copia local (ruta o URL pip); vacío = el de GitHub
 motor_origen: ""

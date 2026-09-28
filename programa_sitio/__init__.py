@@ -6,6 +6,6 @@ sitio repite de la fuente se genera; nada se copia a mano."""
 
 __version__ = "1.0.0"
 # Repositorio del motor: de aquí instalan cada curso y GitHub Actions la versión fijada.
-MOTOR_REPOSITORIO = "https://github.com/jzavalar/programa-sitio"
+MOTOR_REPOSITORIO = "https://github.com/jzavalar/motor-uea"
 
 from .nucleo import ErrorDeFuente, construir  # noqa: E402,F401

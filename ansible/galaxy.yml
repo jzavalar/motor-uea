@@ -10,5 +10,5 @@ description: >-
 license:
   - MIT
 tags: [mkdocs, education, fedora, github]
-repository: https://github.com/jzavalar/programa-sitio
+repository: https://github.com/jzavalar/motor-uea
 build_ignore: []
